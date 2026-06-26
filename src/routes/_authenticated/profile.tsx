@@ -89,7 +89,7 @@ function ProfilePage() {
   if (profileQ.isLoading) {
     return (
       <div className="flex justify-center pt-16">
-        <Loader2 className="h-6 w-6 animate-spin text-[color:var(--clay-orange)]" />
+        <Loader2 className="h-6 w-6 animate-spin text-[var(--neon-orange)]" />
       </div>
     );
   }
@@ -98,12 +98,12 @@ function ProfilePage() {
   if (!p) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center text-center px-4">
-        <UserIcon className="mb-3 h-8 w-8 text-[color:var(--text-light)]" />
-        <h2 className="text-lg font-extrabold text-[color:var(--text-dark)]">No profile yet</h2>
-        <p className="mt-1 max-w-xs text-sm text-[color:var(--text-mid)]">
+        <UserIcon className="mb-3 h-8 w-8 text-[var(--text-muted)]" />
+        <h2 className="text-lg font-extrabold text-[var(--text-primary)]">No profile yet</h2>
+        <p className="mt-1 max-w-xs text-sm text-[var(--text-secondary)]">
           Set up your profile to personalize your plan.
         </p>
-        <Link to="/onboarding" className="clay-btn clay-btn-sm mt-4">Start onboarding</Link>
+        <Link to="/onboarding" className="glass-btn glass-btn-sm mt-4">Start onboarding</Link>
       </div>
     );
   }
@@ -135,30 +135,60 @@ function ProfilePage() {
   return (
     <div className="space-y-4 pt-2">
       {/* Hero */}
-      <div className="clay-card clay-card-orange flex items-center gap-4">
-        <div className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-white/25 border-[3px] border-white/50 text-white font-extrabold text-xl shadow-[0_4px_0_0_rgba(0,0,0,0.2)]">
-          {initial}
-        </div>
-        <div className="min-w-0">
-          <div className="text-xl font-extrabold tracking-tight truncate">{p.name}</div>
-          <div className="text-xs text-white/80 mt-0.5 capitalize">
+      <div className="profile-radial-glow glass-card relative overflow-hidden flex items-center gap-4">
+        <div className="profile-avatar">{initial}</div>
+        <div className="min-w-0 relative z-10">
+          <div className="text-xl font-extrabold tracking-tight truncate text-[var(--text-primary)]">
+            {p.name}
+          </div>
+          <div className="text-xs text-[var(--text-secondary)] mt-0.5 capitalize">
             {p.goal} · {p.experience}
+          </div>
+          <div className="mt-2 flex gap-1.5">
+            <span className="glass-pill"><Target className="h-3 w-3" /> {p.goal}</span>
+            <span className="glass-pill"><Activity className="h-3 w-3" /> {p.experience}</span>
           </div>
         </div>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-2.5">
-        <StatCard label="Weeks started" value={String(stats.weeksStarted)} />
-        <StatCard label="Weeks done" value={String(stats.weeksDone)} />
-        <StatCard label="Avg completion" value={`${stats.avgCompletion}%`} />
-        <StatCard label="Reviews done" value={String(stats.reviewsDone)} />
+        <StatCard label="Weeks started" value={String(stats.weeksStarted)} accent="var(--neon-orange)" />
+        <StatCard label="Weeks done" value={String(stats.weeksDone)} accent="var(--neon-green)" />
+        <StatCard label="Avg completion" value={`${stats.avgCompletion}%`} accent="var(--neon-amber)" />
+        <StatCard label="Reviews done" value={String(stats.reviewsDone)} accent="var(--neon-blue)" />
+      </div>
+
+      {/* Achievements */}
+      <section>
+        <div className="sec-label mb-2 flex items-center gap-1.5">
+          <Award className="h-3.5 w-3.5" /> Achievements
+        </div>
+        <div className="grid grid-cols-4 gap-2">
+          {[
+            { label: "First Week", unlocked: stats.weeksDone >= 1, icon: "🌱" },
+            { label: "4-Week Streak", unlocked: stats.weeksDone >= 4, icon: "🔥" },
+            { label: "80%+ Avg", unlocked: stats.avgCompletion >= 80, icon: "🏆" },
+            { label: "Review Pro", unlocked: stats.reviewsDone >= 3, icon: "⭐" },
+          ].map((a) => (
+            <div
+              key={a.label}
+              className={a.unlocked ? "achievement-badge-unlocked" : "achievement-badge-locked"}
+              title={a.label}
+            >
+              <div className="text-2xl leading-none">{a.icon}</div>
+              <div className="mt-1 text-[9px] font-bold uppercase tracking-wider leading-tight text-center">
+                {a.label}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Details */}
       <section>
         <div className="sec-label mb-2">Profile details</div>
-        <div className="clay-card divide-y divide-dashed divide-[color:var(--clay-border-soft)] p-0">
+        <div className="glass-card divide-y divide-white/5 p-0">
           <DetailRow icon={<UserIcon className="h-3.5 w-3.5" />} k="Age" v={p.age ? `${p.age}` : "—"} />
           <DetailRow icon={<Ruler className="h-3.5 w-3.5" />} k="Height" v={p.height_cm ? `${p.height_cm} cm` : "—"} />
           <DetailRow icon={<Scale className="h-3.5 w-3.5" />} k="Weight" v={p.weight_kg ? `${p.weight_kg} kg` : "—"} />
@@ -177,17 +207,17 @@ function ProfilePage() {
         <div className="sec-label mb-2 flex items-center gap-1.5">
           <AlertTriangle className="h-3.5 w-3.5" /> Food allergies
         </div>
-        <div className="clay-card clay-card-soft-red">
-          <p className="text-xs text-[color:var(--clay-red-shadow)] leading-relaxed">
+        <div className="glass-card glass-card-red">
+          <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
             Add foods we should never include in your diet. Regenerate the diet plan
             after changes.
           </p>
           {tags.length > 0 && (
             <div className="flex flex-wrap gap-1.5 mt-3">
               {tags.map((t) => (
-                <span key={t} className="allergy-tag">
+                <span key={t} className="allergy-pill">
                   {t}
-                  <button onClick={() => removeTag(t)} aria-label={`Remove ${t}`} className="text-[color:var(--clay-red-shadow)]">
+                  <button onClick={() => removeTag(t)} aria-label={`Remove ${t}`} className="text-[var(--neon-red,#ff4646)]">
                     <X className="h-3 w-3" />
                   </button>
                 </span>
@@ -205,11 +235,11 @@ function ProfilePage() {
                 }
               }}
               placeholder="e.g. peanuts"
-              className="flex-1 rounded-full border-[1.5px] border-[color:var(--clay-border)] bg-white px-3.5 py-2 text-xs font-semibold text-[color:var(--text-dark)] outline-none focus:border-[color:var(--clay-orange)]"
+              className="glass-input flex-1 rounded-full"
             />
             <button
               onClick={addTag}
-              className="rounded-full bg-[color:var(--clay-orange)] text-white px-3 py-2 text-xs font-bold shadow-[0_3px_0_0_var(--clay-orange-shadow)] inline-flex items-center gap-1"
+              className="glass-btn glass-btn-sm rounded-full px-3"
             >
               <Plus className="h-3.5 w-3.5" /> Add
             </button>
@@ -222,9 +252,9 @@ function ProfilePage() {
         <div className="sec-label mb-2 flex items-center gap-1.5">
           <TrendingUp className="h-3.5 w-3.5" /> Weekly progress
         </div>
-        <div className="clay-card space-y-2.5">
+        <div className="glass-card space-y-2.5">
           {stats.weeks.length === 0 && (
-            <p className="text-xs text-[color:var(--text-mid)]">
+            <p className="text-xs text-[var(--text-secondary)]">
               Complete your first week to see your progress here.
             </p>
           )}
@@ -233,13 +263,13 @@ function ProfilePage() {
             const pct = r?.completion_pct ?? 0;
             return (
               <div key={w.id} className="flex items-center gap-3">
-                <div className="w-14 shrink-0 text-[11px] font-bold text-[color:var(--text-mid)]">
+                <div className="w-14 shrink-0 text-[11px] font-bold text-[var(--text-secondary)]">
                   Week {w.week_number}
                 </div>
-                <div className="flex-1 prog-bar">
-                  <div className="h-full bg-[color:var(--clay-orange)]" style={{ width: `${pct}%` }} />
+                <div className="flex-1 weekly-progress-fill">
+                  <div style={{ width: `${pct}%` }} />
                 </div>
-                <div className="w-9 text-right text-[11px] font-extrabold text-[color:var(--clay-orange)]">
+                <div className="w-9 text-right text-[11px] font-extrabold text-[var(--neon-orange)]">
                   {pct}%
                 </div>
               </div>
@@ -250,13 +280,13 @@ function ProfilePage() {
 
       {/* Actions */}
       <section className="space-y-2">
-        <Link to="/progress" className="clay-btn clay-btn-outline">
+        <Link to="/progress" className="glass-btn glass-btn-ghost">
           <Award className="h-4 w-4" /> View full progress
         </Link>
-        <Link to="/onboarding" className="clay-btn clay-btn-ghost">
+        <Link to="/onboarding" className="glass-btn glass-btn-ghost">
           <Settings className="h-4 w-4" /> Edit profile
         </Link>
-        <button onClick={signOut} className="clay-btn clay-btn-ghost">
+        <button onClick={signOut} className="glass-btn glass-btn-ghost">
           <LogOut className="h-4 w-4" /> Sign out
         </button>
       </section>
@@ -264,10 +294,15 @@ function ProfilePage() {
   );
 }
 
-function StatCard({ label, value }: { label: string; value: string }) {
+function StatCard({ label, value, accent }: { label: string; value: string; accent?: string }) {
   return (
-    <div className="clay-stat">
-      <div className="text-[22px] font-extrabold text-[color:var(--text-dark)] tracking-tight">{value}</div>
+    <div className="glass-card flex flex-col">
+      <div
+        className="text-[22px] font-extrabold tracking-tight"
+        style={{ color: accent ?? "var(--text-primary)", textShadow: accent ? `0 0 12px ${accent}` : undefined }}
+      >
+        {value}
+      </div>
       <div className="sec-label mt-1">{label}</div>
     </div>
   );
@@ -276,10 +311,10 @@ function StatCard({ label, value }: { label: string; value: string }) {
 function DetailRow({ icon, k, v }: { icon: React.ReactNode; k: string; v: string }) {
   return (
     <div className="flex items-center justify-between px-4 py-2.5">
-      <div className="flex items-center gap-2 text-xs font-semibold text-[color:var(--text-mid)]">
-        <span className="text-[color:var(--text-light)]">{icon}</span> {k}
+      <div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-secondary)]">
+        <span className="text-[var(--neon-orange)]">{icon}</span> {k}
       </div>
-      <div className="text-[13px] font-extrabold text-[color:var(--text-dark)] capitalize">{v}</div>
+      <div className="text-[13px] font-extrabold text-[var(--text-primary)] capitalize">{v}</div>
     </div>
   );
 }
