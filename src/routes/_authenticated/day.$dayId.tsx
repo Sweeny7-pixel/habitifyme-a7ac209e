@@ -153,6 +153,11 @@ function DayPage() {
                   alt={ex.name}
                   loading="lazy"
                   className="h-24 w-24 shrink-0 object-cover bg-white/5"
+                onError={(e) => {
+                  const el = e.currentTarget;
+                  el.onerror = null;
+                  el.style.display = "none";
+                }}
                 />
               ) : (
                 <div className="h-24 w-24 shrink-0 bg-white/5" />
@@ -318,6 +323,11 @@ function ExerciseSheet({
                 src={images[imgIdx % images.length]}
                 alt={`${exercise.name} demo ${imgIdx + 1}`}
                 className="h-full w-full object-contain"
+                onError={(e) => {
+                  const el = e.currentTarget;
+                  el.onerror = null;
+                  el.style.display = "none";
+                }}
               />
             </div>
             {images.length > 1 && (
