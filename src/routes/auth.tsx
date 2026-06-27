@@ -32,17 +32,33 @@ function AuthPage() {
     setLoading(true);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email, password,
           options: { emailRedirectTo: window.location.origin + "/home" },
         });
-        if (error) throw error;
+        if (error) {
+          if (/registered|exists/i.test(error.message)) {
+            toast.error("That email is already registered. Please sign in.");
+            setMode("signin");
+            return;
+          }
+          throw error;
+        }
+        if (!data.session) {
+          toast.info("Check your inbox to confirm your email, then sign in.");
+          setMode("signin");
+          setPassword("");
+          return;
+        }
         toast.success("Account created. Let's set you up.");
+        navigate({ to: "/home" });
+        return;
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        navigate({ to: "/home" });
+        return;
       }
-      navigate({ to: "/home" });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Something went wrong";
       toast.error(msg);
@@ -52,19 +68,19 @@ function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0b0d12] text-white">
-      <div className="mx-auto flex min-h-screen max-w-sm flex-col justify-center px-5 py-10">
+    <div className="min-h-screen bg-[var(--bg-base)] text-[var(--text-primary)]">
+      <div className="mx-auto flex min-h-screen w-full max-w-[375px] flex-col justify-center px-5 py-10">
         <Link to="/" className="mb-8 flex items-center gap-2">
-          <div className="grid h-9 w-9 place-items-center rounded-lg bg-lime-400 text-black">
+          <div className="grid h-9 w-9 place-items-center rounded-[12px] bg-[var(--neon-orange)] text-white shadow-[0_0_18px_var(--neon-orange-glow)]">
             <Dumbbell className="h-5 w-5" />
           </div>
-          <span className="text-lg font-bold tracking-tight">GymBuddy</span>
+          <span className="text-lg font-extrabold tracking-tight">GymBuddy</span>
         </Link>
 
-        <h1 className="text-3xl font-bold tracking-tight">
+        <h1 className="text-[26px] font-extrabold tracking-tight">
           {mode === "signup" ? "Create your account" : "Welcome back"}
         </h1>
-        <p className="mt-1 text-sm text-white/60">
+        <p className="mt-1 text-sm text-[var(--text-secondary)]">
           {mode === "signup" ? "Takes 30 seconds. No card needed." : "Sign in to your weekly plan."}
         </p>
 
@@ -72,24 +88,21 @@ function AuthPage() {
           <input
             type="email" required placeholder="Email" value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm outline-none focus:border-lime-400"
+            className="glass-input"
           />
           <input
             type="password" required placeholder="Password (min 6 chars)" minLength={6} value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm outline-none focus:border-lime-400"
+            className="glass-input"
           />
-          <button
-            type="submit" disabled={loading}
-            className="w-full rounded-xl bg-lime-400 py-3 text-sm font-bold text-black hover:bg-lime-300 disabled:opacity-60"
-          >
+          <button type="submit" disabled={loading} className="glass-btn w-full">
             {loading ? "…" : mode === "signup" ? "Create account" : "Sign in"}
           </button>
         </form>
 
         <button
           onClick={() => setMode(mode === "signup" ? "signin" : "signup")}
-          className="mt-5 text-center text-sm text-white/60 hover:text-white"
+          className="mt-5 text-center text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
         >
           {mode === "signup" ? "Already have an account? Sign in" : "New here? Create account"}
         </button>
