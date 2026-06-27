@@ -395,6 +395,12 @@ const CATALOG_URL =
 const IMAGE_BASE =
   "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/";
 
+function toImageUrl(img: string): string {
+  if (!img) return "";
+  if (img.startsWith("http://") || img.startsWith("https://")) return img;
+  return `${IMAGE_BASE}${img}`;
+}
+
 let catalogPromise: Promise<CatalogExercise[]> | null = null;
 function loadExerciseCatalog(): Promise<CatalogExercise[]> {
   if (!catalogPromise) {
@@ -661,7 +667,7 @@ export const generateFourWeekPlan = createServerFn({ method: "POST" })
               : cat?.instructions
                 ? [cat.instructions as unknown as string]
                 : [],
-            images: (cat?.images ?? []).map((img) => `${IMAGE_BASE}${img}`),
+            images: (cat?.images ?? []).map(toImageUrl),
             youtubeLink:
               "https://www.youtube.com/results?search_query=" +
               [
@@ -873,7 +879,7 @@ export const generatePlanFromPrompt = createServerFn({ method: "POST" })
               : match.instructions
                 ? [String(match.instructions)]
                 : [],
-            images: match.images,
+            images: (match.images ?? []).map(toImageUrl),
             youtubeLink: match.youtubeLink,
             primaryMuscles: match.primaryMuscles,
             equipment: match.equipment ?? null,
