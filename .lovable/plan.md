@@ -1,49 +1,25 @@
-## Goal
+## Plan: Run 28-Test End-to-End Calendar Audit
 
-Fix broken exercise images in prompt-generated plans by normalizing image URL construction in one place, and add a render-time fallback so a failed image never leaves a broken icon on screen.
+Execute the full QA script against the live preview as user `Joannasilvester@gmail.com` using Playwright in the sandbox. No code changes — read-only audit producing the structured report.
 
-## Notes on the request
+### Approach
 
-- The target file is `src/lib/gym.functions.ts` (the project has no `src/server/gymbuddy.server.ts`). Both `generateFourWeekPlan` and `generatePlanFromPrompt` live there.
-- `src/lib/exercise-db.server.ts` already returns absolute URLs (line 82 prefixes `IMAGE_BASE` when needed). So `match.images` in `generatePlanFromPrompt` is already absolute — but the inconsistency the user flagged is real: one path prefixes, the other trusts upstream. A single `toImageUrl` helper that no-ops on absolute URLs makes both paths identical and safe against future changes.
-- `raw.githubusercontent.com` actually serves images with correct `Content-Type`; a server-function proxy would add latency, double bandwidth, and bypass the CDN. I'll skip the proxy route and instead use the lighter `onError` fallback the user listed as the first option. We can revisit the proxy if real users still report broken images after this.
+1. **Setup** — Launch headless Chromium at viewport 390×844, navigate to the preview URL, sign in with the seeded credentials, capture console + network errors on every page.
+2. **Zone A — Calendar (C-01 → C-11)** — Drive the Calendar tab: tap each weekday pill, toggle Month view, verify highlight ring, dot indicators, Open workout navigation, rest-day card, completion flow, future-day preview, week navigation, empty-state for a fresh user (sign up a throwaway account, then sign back in).
+3. **Zone B — Diet (C-12 → C-17)** — Verify calorie sums, workout-pending banner clears after check-in, Open diet plan deep link, scan all 7 days × 4 meals for the substring "egg", empty-state for no-plan user, rest-day meal variation.
+4. **Zone C — Gap detection (C-18 → C-23)** — Manipulate `localStorage` (`gymbuddy_lastCheckin`, `gymbuddy_gap_choice`) per the script, reload, observe banner / modal / reset behavior.
+5. **Zone D — Navigation (C-24 → C-28)** — Tap each bottom tab, rapid-switch ×10, Diet→Calendar deep link, back-nav preserves selected day, Edit profile → regenerate plan → Calendar resets.
+6. **Report** — Emit the exact structured report format requested, with PASS/FAIL/BUG per test, screenshots saved under `/tmp/browser/audit/screenshots/`, console errors grouped by test ID, and a prioritized fix list.
 
-## Changes
+### Technical details
 
-### 1. `src/lib/gym.functions.ts`
+- Playwright async API, one browser context, fresh page per zone to keep console logs scoped.
+- Session restored via `LOVABLE_BROWSER_SUPABASE_*` env vars if `LOVABLE_BROWSER_AUTH_STATUS=injected`; otherwise sign in through the `/auth` form with the provided credentials.
+- Console + pageerror + response listeners attached; failures captured into a per-test dict.
+- Screenshots on every FAIL/BUG via `page.screenshot(path=...)` (no full_page).
+- Credentials read from a local `.env` written to `/tmp/browser/audit/` — never echoed.
+- No code edits, no migrations, no server restarts. Audit only.
 
-Add helper right after the existing `IMAGE_BASE` constant (~line 395):
+### Deliverable
 
-```ts
-function toImageUrl(img: string): string {
-  if (!img) return "";
-  if (img.startsWith("http://") || img.startsWith("https://")) return img;
-  return `${IMAGE_BASE}${img}`;
-}
-```
-
-Update both call sites to use it:
-
-- Line 664 (`generateFourWeekPlan`):
-  `images: (cat?.images ?? []).map(toImageUrl)`
-- Line 876 (`generatePlanFromPrompt`):
-  `images: (match.images ?? []).map(toImageUrl)`
-
-### 2. `src/routes/_authenticated/day.$dayId.tsx`
-
-Two `<img>` tags render exercise images (the card thumbnail and the bottom-sheet demo). Add an `onError` handler to each that hides the broken image and clears `onerror` to prevent infinite loops, matching the pattern in the request:
-
-```tsx
-onError={(e) => {
-  const el = e.currentTarget;
-  el.onerror = null;
-  el.style.display = "none";
-}}
-```
-
-The existing `bg-white/5` container already provides a neutral placeholder when the image is hidden, so no extra markup is needed.
-
-## Out of scope
-
-- Server-side image proxy (`getExerciseImage` server function). Adds cost and latency for a Content-Type issue we have no current evidence of on GitHub's CDN. Keep as a follow-up if the `onError` fallback isn't enough.
-- Changes to `exercise-db.server.ts` — it already normalizes correctly.
+A single chat reply containing the full **GymBuddy Calendar Audit — Test Report** in the requested markdown format, plus paths to screenshots for any FAIL/BUG.
