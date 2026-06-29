@@ -219,17 +219,19 @@ function CalendarPage() {
 }
 
 function WeekStrip({
+  anchor,
   selected,
   setSelected,
   dateToDay,
   today,
 }: {
+  anchor: Date;
   selected: Date;
   setSelected: (d: Date) => void;
   dateToDay: Map<string, { id: string; completed_at: string | null }>;
   today: Date;
 }) {
-  const start = useMemo(() => startOfWeekMon(selected), [selected]);
+  const start = useMemo(() => startOfWeekMon(anchor), [anchor]);
   const cells = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(start, i)), [start]);
 
   return (
@@ -270,13 +272,13 @@ function WeekStrip({
 }
 
 function WeeklyProgressCard({
-  selected,
+  anchor,
   dateToDay,
 }: {
-  selected: Date;
+  anchor: Date;
   dateToDay: Map<string, { id: string; completed_at: string | null }>;
 }) {
-  const start = useMemo(() => startOfWeekMon(selected), [selected]);
+  const start = useMemo(() => startOfWeekMon(anchor), [anchor]);
   const week = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(start, i)), [start]);
   const scheduled = week.filter((d) => dateToDay.get(d.toDateString())).length;
   const completed = week.filter((d) => dateToDay.get(d.toDateString())?.completed_at).length;
