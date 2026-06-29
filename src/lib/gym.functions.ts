@@ -1006,7 +1006,7 @@ User profile:
 - Gender: ${input.profile.gender}
 - Workout sessions this week (${input.workoutDays.length}): ${input.workoutDays.join(", ") || "none"}
 - Rest days this week: ${input.restDayCount}
-- Allergies / foods to avoid: ${normalizeAllergies(input.profile.allergies) || "none"}
+- Allergies / foods to avoid: ${normalizeAllergies(input.profile.allergies as string | null | undefined) || "none"}
 
 STRICT RULES:
 1. Use only common Indian foods: roti, rice, dal, sabzi, eggs, paneer, curd, chicken (optional), fruits, nuts.
