@@ -219,6 +219,7 @@ function CalendarPage() {
 }
 
 function WeekStrip({
+  /* anchor day used as the Monday-of-week origin for the strip */
   anchor,
   selected,
   setSelected,
