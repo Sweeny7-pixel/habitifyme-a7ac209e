@@ -72,6 +72,14 @@ function DayPage() {
   const completeMut = useMutation({
     mutationFn: () => completeFn({ data: { dayId } }),
     onSuccess: () => {
+      // Record gap-detector check-in so we don't show the "you've been
+      // away" modal next time the user opens the app.
+      try {
+        localStorage.setItem("gymbuddy_lastCheckin", new Date().toISOString());
+        localStorage.removeItem("gymbuddy_gap_choice");
+      } catch {
+        /* ignore */
+      }
       toast.success("Workout logged. Great work!");
       qc.invalidateQueries({ queryKey: ["currentWeek"] });
       qc.invalidateQueries({ queryKey: ["planWeeks"] });
