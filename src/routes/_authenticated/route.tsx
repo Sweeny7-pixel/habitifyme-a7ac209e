@@ -95,7 +95,7 @@ function AuthedShell() {
                 className="truncate text-base font-extrabold tracking-tight"
                 style={{ color: "var(--text-primary)" }}
               >
-                GymBuddy
+                HabitifyMe
               </span>
             </Link>
             <div className="flex shrink-0 items-center gap-2">

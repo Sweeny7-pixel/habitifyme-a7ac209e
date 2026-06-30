@@ -9,7 +9,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/_authenticated/day/$dayId")({
   head: () => ({
     meta: [
-      { title: "Workout — GymBuddy" },
+      { title: "Workout — HabitifyMe" },
       { name: "description", content: "Log your sets and finish your workout." },
     ],
   }),

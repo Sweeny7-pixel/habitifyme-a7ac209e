@@ -1,25 +1,31 @@
-## Plan: Run 28-Test End-to-End Calendar Audit
+# Rename: GymBuddy → HabitifyMe
 
-Execute the full QA script against the live preview as user `Joannasilvester@gmail.com` using Playwright in the sandbox. No code changes — read-only audit producing the structured report.
+Pure text rebrand. No identifiers, file names, routes, queryKeys, table names, or localStorage keys change.
 
-### Approach
+## Files to edit (user-facing strings only)
 
-1. **Setup** — Launch headless Chromium at viewport 390×844, navigate to the preview URL, sign in with the seeded credentials, capture console + network errors on every page.
-2. **Zone A — Calendar (C-01 → C-11)** — Drive the Calendar tab: tap each weekday pill, toggle Month view, verify highlight ring, dot indicators, Open workout navigation, rest-day card, completion flow, future-day preview, week navigation, empty-state for a fresh user (sign up a throwaway account, then sign back in).
-3. **Zone B — Diet (C-12 → C-17)** — Verify calorie sums, workout-pending banner clears after check-in, Open diet plan deep link, scan all 7 days × 4 meals for the substring "egg", empty-state for no-plan user, rest-day meal variation.
-4. **Zone C — Gap detection (C-18 → C-23)** — Manipulate `localStorage` (`gymbuddy_lastCheckin`, `gymbuddy_gap_choice`) per the script, reload, observe banner / modal / reset behavior.
-5. **Zone D — Navigation (C-24 → C-28)** — Tap each bottom tab, rapid-switch ×10, Diet→Calendar deep link, back-nav preserves selected day, Edit profile → regenerate plan → Calendar resets.
-6. **Report** — Emit the exact structured report format requested, with PASS/FAIL/BUG per test, screenshots saved under `/tmp/browser/audit/screenshots/`, console errors grouped by test ID, and a prioritized fix list.
+- `src/routes/index.tsx` — title, og:title, header logo text, body copy, footer text
+- `src/routes/auth.tsx` — title, description, logo text
+- `src/routes/_authenticated/route.tsx` — header brand text (line 98)
+- `src/routes/_authenticated/home.tsx` — page title
+- `src/routes/_authenticated/diet.tsx` — page title
+- `src/routes/_authenticated/calendar.tsx` — page title
+- `src/routes/_authenticated/day.$dayId.tsx` — page title
+- `src/routes/_authenticated/profile.tsx` — page title
+- `src/routes/_authenticated/progress.tsx` — page title
+- `src/routes/_authenticated/onboarding.tsx` — page title
+- `src/routes/_authenticated/review.$weekId.tsx` — page title
 
-### Technical details
+## LLM system prompts (open question)
 
-- Playwright async API, one browser context, fresh page per zone to keep console logs scoped.
-- Session restored via `LOVABLE_BROWSER_SUPABASE_*` env vars if `LOVABLE_BROWSER_AUTH_STATUS=injected`; otherwise sign in through the `/auth` form with the provided credentials.
-- Console + pageerror + response listeners attached; failures captured into a per-test dict.
-- Screenshots on every FAIL/BUG via `page.screenshot(path=...)` (no full_page).
-- Credentials read from a local `.env` written to `/tmp/browser/audit/` — never echoed.
-- No code edits, no migrations, no server restarts. Audit only.
+`src/lib/gym.functions.ts` has 3 occurrences inside system prompts ("You are GymBuddy…"). These aren't shown to the user, but they shape the assistant's self-identity in generated copy. Default: update them to "HabitifyMe" for consistency. Skip if you'd rather leave the model persona alone.
 
-### Deliverable
+## Not touching
 
-A single chat reply containing the full **GymBuddy Calendar Audit — Test Report** in the requested markdown format, plus paths to screenshots for any FAIL/BUG.
+- `src/styles.css` line 8 — code comment (not user-facing, but harmless to update; will update for consistency)
+- localStorage keys `gymbuddy_lastCheckin`, `gymbuddy_plan` — left as-is per instructions
+- All variable/function/class names, file names, queryKeys, table names
+
+## Verification
+
+After edits, run `rg -n "GymBuddy" src/` and report remaining occurrences (expected: 0 user-facing; localStorage key strings will still show as `gymbuddy_…` which is acceptable).

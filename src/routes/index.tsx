@@ -4,9 +4,9 @@ import { Dumbbell, CheckCircle2, Sparkles, PlayCircle } from "lucide-react";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "GymBuddy — Your AI gym coach in your pocket" },
+      { title: "HabitifyMe — Your AI gym coach in your pocket" },
       { name: "description", content: "Walk into any budget gym with a plan. AI-generated weekly workouts, demo videos, and check-ins that adapt to what you actually finish." },
-      { property: "og:title", content: "GymBuddy — Your AI gym coach in your pocket" },
+      { property: "og:title", content: "HabitifyMe — Your AI gym coach in your pocket" },
       { property: "og:description", content: "Walk into any budget gym with a plan. AI-generated weekly workouts, demo videos, and check-ins that adapt to you." },
     ],
   }),
@@ -21,7 +21,7 @@ function Landing() {
           <div className="grid h-9 w-9 place-items-center rounded-lg bg-lime-400 text-black">
             <Dumbbell className="h-5 w-5" />
           </div>
-          <span className="text-lg font-bold tracking-tight">GymBuddy</span>
+          <span className="text-lg font-bold tracking-tight">HabitifyMe</span>
         </div>
         <Link to="/auth" className="rounded-full bg-white/10 px-4 py-2 text-sm font-medium hover:bg-white/15">
           Sign in
@@ -37,7 +37,7 @@ function Landing() {
           <span className="text-lime-400">with a plan.</span>
         </h1>
         <p className="mt-5 max-w-xl text-base text-white/70 md:text-lg">
-          You paid for the gym. You don't have to pay a trainer too. GymBuddy gives you a weekly plan, video demos, and one-tap check-ins — and adapts next week to what you actually finished.
+          You paid for the gym. You don't have to pay a trainer too. HabitifyMe gives you a weekly plan, video demos, and one-tap check-ins — and adapts next week to what you actually finished.
         </p>
         <div className="mt-7 flex flex-wrap gap-3">
           <Link to="/auth" className="rounded-full bg-lime-400 px-6 py-3 text-sm font-bold text-black hover:bg-lime-300">
@@ -68,7 +68,7 @@ function Landing() {
       </section>
 
       <footer className="border-t border-white/10 py-6 text-center text-xs text-white/40">
-        GymBuddy — built for the first 4 weeks that matter most.
+        HabitifyMe — built for the first 4 weeks that matter most.
       </footer>
     </div>
   );

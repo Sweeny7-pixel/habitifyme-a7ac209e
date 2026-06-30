@@ -26,7 +26,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/_authenticated/home")({
   head: () => ({
     meta: [
-      { title: "Your plan — GymBuddy" },
+      { title: "Your plan — HabitifyMe" },
       { name: "description", content: "Your 4-week training block, day by day." },
     ],
   }),

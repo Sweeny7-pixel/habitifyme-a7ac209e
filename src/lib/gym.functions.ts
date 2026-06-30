@@ -165,7 +165,7 @@ async function callGeminiForPlan(systemPrompt: string, userPrompt: string): Prom
   return PlanSchema.parse(parsed);
 }
 
-const SYSTEM_PROMPT = `You are GymBuddy, a cautious, encouraging fitness coach for budget gym beginners in India. Rules:
+const SYSTEM_PROMPT = `You are HabitifyMe, a cautious, encouraging fitness coach for budget gym beginners in India. Rules:
 - Design safe, simple programs appropriate for beginners.
 - Use standard barbell, dumbbell, machine, and bodyweight movements available in a basic gym.
 - Always include warm-up cues in form_cue when relevant.
@@ -549,7 +549,7 @@ async function callGeminiForFourWeekPlan(
   const { createLovableAiGatewayProvider } = await import("./ai-gateway.server");
   const gateway = createLovableAiGatewayProvider(key);
 
-  const system = `You are GymBuddy, a careful coach for budget-gym beginners in India. You will design a 4-week training block.
+  const system = `You are HabitifyMe, a careful coach for budget-gym beginners in India. You will design a 4-week training block.
 RULES:
 - You MUST ONLY pick exercises from the provided allowed_exercises list, using their exact "id".
 - Use exactly profile.days_per_week training days per week (no rest days listed).
@@ -785,7 +785,7 @@ async function callGeminiForPromptPlan(
   const { createLovableAiGatewayProvider } = await import("./ai-gateway.server");
   const gateway = createLovableAiGatewayProvider(key);
 
-  const system = `You are GymBuddy. Convert a user's workout-plan request into a structured JSON plan.
+  const system = `You are HabitifyMe. Convert a user's workout-plan request into a structured JSON plan.
 RULES:
 - Use canonical exercise names from the yuhonas/free-exercise-db catalog (e.g. "Barbell Curl", "Dumbbell Bench Press", "Wide-Grip Lat Pulldown"). No slang, no abbreviations.
 - For each exercise, also provide the primary muscle ("chest", "biceps", "quadriceps", ...) and equipment ("barbell", "dumbbell", "cable", "machine", "body only", ...). These hints help match real exercises.

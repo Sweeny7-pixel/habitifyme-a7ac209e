@@ -10,7 +10,7 @@ import { Loader2 } from "lucide-react";
 export const Route = createFileRoute("/_authenticated/review/$weekId")({
   head: () => ({
     meta: [
-      { title: "Week review — GymBuddy" },
+      { title: "Week review — HabitifyMe" },
       { name: "description", content: "Reflect on the week so next week adapts to you." },
     ],
   }),

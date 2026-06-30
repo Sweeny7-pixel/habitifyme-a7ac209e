@@ -9,7 +9,7 @@ import { Loader2 } from "lucide-react";
 export const Route = createFileRoute("/_authenticated/onboarding")({
   head: () => ({
     meta: [
-      { title: "Set up your plan — GymBuddy" },
+      { title: "Set up your plan — HabitifyMe" },
       { name: "description", content: "A few questions so the AI builds the right plan for you." },
     ],
   }),

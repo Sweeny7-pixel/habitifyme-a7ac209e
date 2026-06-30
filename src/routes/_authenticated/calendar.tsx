@@ -18,7 +18,7 @@ import {
 export const Route = createFileRoute("/_authenticated/calendar")({
   head: () => ({
     meta: [
-      { title: "Calendar — GymBuddy" },
+      { title: "Calendar — HabitifyMe" },
       { name: "description", content: "Your day-by-day workout and diet plan in one view." },
     ],
   }),

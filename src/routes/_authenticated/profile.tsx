@@ -27,7 +27,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({
     meta: [
-      { title: "Profile — GymBuddy" },
+      { title: "Profile — HabitifyMe" },
       { name: "description", content: "Your training profile, stats, and preferences." },
     ],
   }),

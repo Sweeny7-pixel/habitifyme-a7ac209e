@@ -7,7 +7,7 @@ import { Loader2, Award } from "lucide-react";
 export const Route = createFileRoute("/_authenticated/progress")({
   head: () => ({
     meta: [
-      { title: "Progress — GymBuddy" },
+      { title: "Progress — HabitifyMe" },
       { name: "description", content: "Your weekly completion history and milestones." },
     ],
   }),
