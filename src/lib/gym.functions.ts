@@ -392,11 +392,12 @@ export const getDay = createServerFn({ method: "POST" })
           };
         }),
       );
-      return { day: { ...day, exercises_json: hydrated }, logs: logs ?? [] };
+      return { day: { ...day, exercises_json: hydrated as unknown as Json }, logs: logs ?? [] };
     }
 
     return { day, logs: logs ?? [] };
   });
+
 
 
 // ============ Log exercise / complete day ============
