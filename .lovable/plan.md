@@ -1,31 +1,29 @@
-# Rename: GymBuddy → HabitifyMe
+## Fix: Home page KCAL & Protein showing empty
 
-Pure text rebrand. No identifiers, file names, routes, queryKeys, table names, or localStorage keys change.
+**Root cause:** `diet_json` now stores a 7-day format (`SevenDayDiet` with a `.days[]` array), but `home.tsx` still reads it as the old `DietJson` shape with `daily_calories`/`daily_protein_g` at the root — so both fields are `undefined` and render blank.
 
-## Files to edit (user-facing strings only)
+**Scope:** Only `src/routes/_authenticated/home.tsx`. No other files, no server functions, no DB.
 
-- `src/routes/index.tsx` — title, og:title, header logo text, body copy, footer text
-- `src/routes/auth.tsx` — title, description, logo text
-- `src/routes/_authenticated/route.tsx` — header brand text (line 98)
-- `src/routes/_authenticated/home.tsx` — page title
-- `src/routes/_authenticated/diet.tsx` — page title
-- `src/routes/_authenticated/calendar.tsx` — page title
-- `src/routes/_authenticated/day.$dayId.tsx` — page title
-- `src/routes/_authenticated/profile.tsx` — page title
-- `src/routes/_authenticated/progress.tsx` — page title
-- `src/routes/_authenticated/onboarding.tsx` — page title
-- `src/routes/_authenticated/review.$weekId.tsx` — page title
+### Changes
 
-## LLM system prompts (open question)
+1. **Add `SevenDayDiet` types** alongside the existing `DietJson` (kept for fallback + `.notes`).
 
-`src/lib/gym.functions.ts` has 3 occurrences inside system prompts ("You are GymBuddy…"). These aren't shown to the user, but they shape the assistant's self-identity in generated copy. Default: update them to "HabitifyMe" for consistency. Skip if you'd rather leave the model persona alone.
+2. **Add `getTodayDietStats(dietJson)` helper** that:
+   - Detects new format (`.days` array of 7) → picks today's entry via `(getDay() + 6) % 7` → returns `totalApproxCalories` and a derived protein `round(kcal * 0.30 / 4)`.
+   - Falls back to the old format if `daily_calories` exists at root.
+   - Returns `{ calories: null, proteinG: null }` otherwise.
 
-## Not touching
+3. **In `HomePage`**, compute `const dietStats = getTodayDietStats(activeWeek.diet_json)` and keep the existing `diet` cast for the old-format `.notes` fallback.
 
-- `src/styles.css` line 8 — code comment (not user-facing, but harmless to update; will update for consistency)
-- localStorage keys `gymbuddy_lastCheckin`, `gymbuddy_plan` — left as-is per instructions
-- All variable/function/class names, file names, queryKeys, table names
+4. **Top metric grid (Calories card, line ~210–215):** render `{dietStats.calories ?? "—"}` instead of `diet?.daily_calories ?? "—"`. The Workouts card is unchanged.
 
-## Verification
+5. **"Today's diet target" section (line ~303–328):**
+   - Render condition becomes `{(dietStats.calories || diet) && (...)}`.
+   - Kcal cell: `{dietStats.calories ?? diet?.daily_calories ?? "—"}`.
+   - Protein cell: `{dietStats.proteinG ? \`${dietStats.proteinG}g\` : diet?.daily_protein_g ? \`${diet.daily_protein_g}g\` : "—"}`.
+   - `diet?.notes` rendering and the "View 7-day diet plan" link stay as-is.
 
-After edits, run `rg -n "GymBuddy" src/` and report remaining occurrences (expected: 0 user-facing; localStorage key strings will still show as `gymbuddy_…` which is acceptable).
+### Verification
+- KCAL on home matches today's calories on `/diet`.
+- Protein shows e.g. `101g` (30% of kcal / 4), not blank.
+- Workouts counter unchanged; no TS errors; old-format users still see their stored values.

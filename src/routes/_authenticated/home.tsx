@@ -40,6 +40,49 @@ type DietJson = {
   meals: { name: string; items: string }[];
 };
 
+type Meal = { items: string[]; approxCalories: number };
+type DietDay = {
+  day: string;
+  isWorkoutDay: boolean;
+  meals: {
+    breakfast: Meal;
+    lunch: Meal;
+    eveningSnack: Meal;
+    dinner: Meal;
+  };
+  totalApproxCalories: number;
+  proteinNote: string;
+};
+type SevenDayDiet = { days: DietDay[] };
+
+function getTodayDietStats(dietJson: unknown): {
+  calories: number | null;
+  proteinG: number | null;
+  isNewFormat: boolean;
+} {
+  if (!dietJson) return { calories: null, proteinG: null, isNewFormat: false };
+  const asNew = dietJson as SevenDayDiet;
+  if (Array.isArray(asNew?.days) && asNew.days.length === 7) {
+    const jsDay = new Date().getDay();
+    const idx = (jsDay + 6) % 7;
+    const today = asNew.days[idx];
+    if (today) {
+      const kcal = today.totalApproxCalories;
+      const proteinG = Math.round((kcal * 0.30) / 4);
+      return { calories: kcal, proteinG, isNewFormat: true };
+    }
+  }
+  const asOld = dietJson as { daily_calories?: number; daily_protein_g?: number };
+  if (asOld?.daily_calories) {
+    return {
+      calories: asOld.daily_calories,
+      proteinG: asOld.daily_protein_g ?? null,
+      isNewFormat: false,
+    };
+  }
+  return { calories: null, proteinG: null, isNewFormat: false };
+}
+
 function HomePage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -137,6 +180,7 @@ function HomePage() {
 
   if (!activeWeek) return null;
   const diet = activeWeek.diet_json as DietJson | null;
+  const dietStats = getTodayDietStats(activeWeek.diet_json);
   const totalDays = activeDays.length;
   const doneDays = activeDays.filter((d) => d.completed_at).length;
   const allDone = doneDays === totalDays && totalDays > 0;
@@ -210,7 +254,7 @@ function HomePage() {
         <div className="glass-card glass-card-amber p-4">
           <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Calories</div>
           <div className="mt-1 text-2xl font-extrabold tracking-tight text-[var(--neon-amber)]">
-            {diet?.daily_calories ?? "—"}
+            {dietStats.calories ?? "—"}
           </div>
         </div>
       </div>
@@ -301,7 +345,7 @@ function HomePage() {
       )}
 
       {/* Diet preview */}
-      {diet && (
+      {(dietStats.calories || diet) && (
         <section>
           <div className="sec-label mb-2 flex items-center gap-1.5">
             <Utensils className="h-3.5 w-3.5" /> Today's diet target
@@ -309,15 +353,23 @@ function HomePage() {
           <div className="glass-card">
             <div className="grid grid-cols-2 gap-3">
               <div className="glass-stat">
-                <div className="text-[22px] font-extrabold text-[var(--text-primary)]">{diet.daily_calories}</div>
+                <div className="text-[22px] font-extrabold text-[var(--text-primary)]">
+                  {dietStats.calories ?? diet?.daily_calories ?? "—"}
+                </div>
                 <div className="sec-label mt-1">Kcal</div>
               </div>
               <div className="glass-stat">
-                <div className="text-[22px] font-extrabold text-[var(--text-primary)]">{diet.daily_protein_g}g</div>
+                <div className="text-[22px] font-extrabold text-[var(--text-primary)]">
+                  {dietStats.proteinG
+                    ? `${dietStats.proteinG}g`
+                    : diet?.daily_protein_g
+                    ? `${diet.daily_protein_g}g`
+                    : "—"}
+                </div>
                 <div className="sec-label mt-1">Protein</div>
               </div>
             </div>
-            {diet.notes && (
+            {diet?.notes && (
               <p className="mt-3 text-xs text-[var(--text-secondary)] leading-relaxed">{diet.notes}</p>
             )}
             <Link to="/diet" className="glass-btn glass-btn-ghost glass-btn-sm mt-3 w-full">
