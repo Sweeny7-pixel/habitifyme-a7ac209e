@@ -7,9 +7,10 @@ import {
   useNavigate,
 } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { getProfile, getAllPlanWeeks } from "@/lib/gym.functions";
+import { getProfile, getAllPlanWeeks, backfillPlanMedia } from "@/lib/gym.functions";
+import { useEffect } from "react";
 import {
   House,
   CalendarDays,
@@ -34,9 +35,28 @@ function AuthedShell() {
   const navigate = useNavigate();
   const getProfileFn = useServerFn(getProfile);
   const getPlanFn = useServerFn(getAllPlanWeeks);
+  const backfillFn = useServerFn(backfillPlanMedia);
+  const qc = useQueryClient();
 
   const profileQ = useQuery({ queryKey: ["profile"], queryFn: () => getProfileFn() });
   const planQ = useQuery({ queryKey: ["planWeeks"], queryFn: () => getPlanFn() });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const KEY = "gymbuddy_mediaBackfilledAt";
+    const last = Number(window.localStorage.getItem(KEY) ?? "0");
+    const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
+    if (Date.now() - last < SEVEN_DAYS) return;
+    backfillFn()
+      .then((res: { updatedDays: number }) => {
+        window.localStorage.setItem(KEY, String(Date.now()));
+        if (res?.updatedDays > 0) {
+          qc.invalidateQueries({ queryKey: ["day"] });
+          qc.invalidateQueries({ queryKey: ["planWeeks"] });
+        }
+      })
+      .catch(() => {});
+  }, [backfillFn, qc]);
 
   const initial = (profileQ.data?.name?.trim()?.[0] ?? "G").toUpperCase();
 
