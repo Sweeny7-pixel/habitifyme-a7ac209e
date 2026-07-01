@@ -51,8 +51,8 @@ function ReviewPage() {
   if (generating) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
-        <Loader2 className="mb-4 h-8 w-8 animate-spin text-[color:var(--clay-orange)]" />
-        <h2 className="text-xl font-bold">Adapting your next week…</h2>
+        <Loader2 className="mb-4 h-8 w-8 animate-spin text-[color:var(--neon-orange)]" />
+        <h2 className="text-xl font-bold text-white">Adapting your next week…</h2>
         <p className="mt-2 text-sm text-[color:var(--text-mid)]">Building based on what you finished.</p>
       </div>
     );
@@ -61,8 +61,8 @@ function ReviewPage() {
   return (
     <div className="space-y-5">
       <div>
-        <p className="text-xs font-medium uppercase tracking-wider text-[color:var(--clay-orange)]">Week review</p>
-        <h1 className="mt-1 text-2xl font-bold tracking-tight">How did the week go?</h1>
+        <p className="text-xs font-medium uppercase tracking-wider text-[color:var(--neon-orange)]">Week review</p>
+        <h1 className="mt-1 text-2xl font-bold tracking-tight text-white">How did the week go?</h1>
       </div>
 
       <SliderField label={`Energy this week: ${energy}/5`} value={energy} setValue={setEnergy} />
@@ -73,8 +73,10 @@ function ReviewPage() {
         <div className="grid grid-cols-3 gap-2">
           {(["easier", "same", "harder"] as const).map((p) => (
             <button key={p} onClick={() => setPref(p)}
-              className={`rounded-xl border py-2.5 text-sm font-medium capitalize ${
-                pref === p ? "border-[color:var(--clay-orange)] bg-[color:var(--clay-orange-light)] text-[color:var(--clay-orange-shadow)]" : "border-[color:var(--clay-border)] bg-white text-[color:var(--text-mid)]"
+              className={`rounded-xl border py-2.5 text-sm font-medium capitalize transition-colors ${
+                pref === p
+                  ? "border-[color:var(--neon-orange)] bg-[color:var(--neon-orange-glow)] text-[color:var(--neon-orange)]"
+                  : "glass-card text-[color:var(--text-mid)] hover:text-white"
               }`}>{p}</button>
           ))}
         </div>
@@ -83,11 +85,11 @@ function ReviewPage() {
       <label className="block">
         <span className="mb-1.5 block text-xs font-medium text-[color:var(--text-mid)]">Notes (optional)</span>
         <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2}
-          className="w-full rounded-lg border border-[color:var(--clay-border)] bg-white px-3 py-2.5 text-sm outline-none focus:border-[color:var(--clay-orange)]" />
+          className="glass-input w-full resize-none px-3 py-2.5 text-sm text-white placeholder:text-[color:var(--text-mid)]" />
       </label>
 
       <button onClick={() => mut.mutate()} disabled={mut.isPending}
-        className="w-full rounded-xl bg-[color:var(--clay-orange)] py-3 text-sm font-bold text-white hover:bg-lime-300 disabled:opacity-60">
+        className="w-full rounded-xl bg-[color:var(--neon-orange)] py-3 text-sm font-bold text-white transition-all hover:brightness-110 disabled:opacity-60">
         {mut.isPending ? "Submitting…" : "Submit & generate next week"}
       </button>
     </div>
@@ -99,7 +101,7 @@ function SliderField({ label, value, setValue }: { label: string; value: number;
     <label className="block">
       <span className="mb-1.5 block text-xs font-medium text-[color:var(--text-mid)]">{label}</span>
       <input type="range" min={1} max={5} value={value}
-        onChange={(e) => setValue(+e.target.value)} className="w-full accent-lime-400" />
+        onChange={(e) => setValue(+e.target.value)} className="w-full" />
     </label>
   );
 }
