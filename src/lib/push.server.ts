@@ -68,8 +68,9 @@ export async function sendPushToMany(
         const res = await fetch(sub.endpoint, {
           method: built.method,
           headers: built.headers,
-          body: built.body,
+          body: built.body.buffer as ArrayBuffer,
         });
+
         if (res.status === 404 || res.status === 410) {
           gone.push(sub.endpoint);
           failed++;
