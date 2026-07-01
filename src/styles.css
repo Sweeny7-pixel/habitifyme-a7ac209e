@@ -607,8 +607,16 @@
 @utility weekly-progress-fill {
   height: 8px;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--neon-purple), var(--neon-blue));
-  box-shadow: 0 0 12px rgba(166, 123, 255, 0.35);
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+
+  > div {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--neon-purple), var(--neon-blue));
+    box-shadow: 0 0 12px rgba(166, 123, 255, 0.35);
+    transition: width .3s ease;
+  }
 }
 
 @utility glass-modal-overlay {
