@@ -489,8 +489,18 @@ export const submitWeekReview = createServerFn({ method: "POST" })
     await supabase.from("weeks").update({ status: "completed" })
       .eq("id", data.week_id).eq("user_id", userId);
 
+    // Fire achievement pushes for any newly-unlocked badges. Never let a
+    // push failure block the review from being saved.
+    try {
+      const { evaluateAndNotifyAchievements } = await import("./push.functions");
+      await evaluateAndNotifyAchievements(supabase, userId);
+    } catch (err) {
+      console.warn("[achievements] notify failed", err);
+    }
+
     return { ok: true, completion_pct };
   });
+
 
 // ============ Progress history ============
 
