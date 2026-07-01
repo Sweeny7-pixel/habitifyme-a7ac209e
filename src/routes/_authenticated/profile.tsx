@@ -3,7 +3,17 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState, useEffect } from "react";
 import { getProfile, getAllWeeks, updateAllergies } from "@/lib/gym.functions";
+import { savePushSubscription, deletePushSubscription, sendTestPush } from "@/lib/push.functions";
+import {
+  pushSupported,
+  isIosSafari,
+  subscribeToPush,
+  unsubscribeFromPush,
+  getExistingPushSubscription,
+  serializeSubscription,
+} from "@/lib/push-client";
 import { supabase } from "@/integrations/supabase/client";
+
 import {
   Loader2,
   User as UserIcon,
