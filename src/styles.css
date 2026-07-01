@@ -706,3 +706,35 @@
   place-items: center;
   color: var(--text-muted);
 }
+
+/* Range slider — dark glass theme */
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #FF6B35;
+  box-shadow: 0 0 10px rgba(255, 107, 53, 0.60);
+  cursor: pointer;
+  border: 2px solid rgba(255, 255, 255, 0.20);
+  transition: box-shadow 0.15s;
+}
+input[type="range"]::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 16px rgba(255, 107, 53, 0.80);
+}
+input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #FF6B35;
+  box-shadow: 0 0 10px rgba(255, 107, 53, 0.60);
+  cursor: pointer;
+  border: 2px solid rgba(255, 255, 255, 0.20);
+}
+
+/* Fix select option list on dark theme */
+select option {
+  background-color: #1a1d22;
+  color: #ffffff;
+}
