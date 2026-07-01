@@ -230,6 +230,56 @@ export const generateWeekPlan = createServerFn({ method: "POST" })
 
     const plan = await callGeminiForPlan(SYSTEM_PROMPT, userPrompt);
 
+    // Hydrate each AI exercise with catalog data (images, instructions,
+    // primaryMuscles, equipment, level, youtubeLink) so the UI can render
+    // thumbnails and demo images. Falls back to the raw AI exercise when no
+    // catalog match is found so the workout still shows.
+    const { findExercise } = await import("./exercise-db.server");
+    const hydratedDays = await Promise.all(
+      plan.days.map(async (d) => {
+        const exercises = await Promise.all(
+          d.exercises.map(async (ex) => {
+            const match = await findExercise({ name: ex.name });
+            if (!match) {
+              return {
+                name: ex.name,
+                sets: ex.sets,
+                reps: ex.reps,
+                rest_seconds: ex.rest_seconds,
+                form_cue: ex.form_cue,
+                images: [] as string[],
+                instructions: [] as string[],
+                primaryMuscles: [] as string[],
+                equipment: null as string | null,
+                level: null as string | null,
+                youtubeLink:
+                  "https://www.youtube.com/results?search_query=" +
+                  encodeURIComponent(ex.youtube_query || `${ex.name} proper form`).replaceAll("+", "%20"),
+              };
+            }
+            return {
+              name: match.name,
+              sets: ex.sets,
+              reps: ex.reps,
+              rest_seconds: ex.rest_seconds,
+              form_cue: ex.form_cue,
+              instructions: Array.isArray(match.instructions)
+                ? match.instructions
+                : match.instructions
+                  ? [String(match.instructions)]
+                  : [],
+              images: (match.images ?? []).map(toImageUrl),
+              youtubeLink: match.youtubeLink,
+              primaryMuscles: match.primaryMuscles,
+              equipment: match.equipment ?? null,
+              level: match.level,
+            };
+          }),
+        );
+        return { ...d, exercises };
+      }),
+    );
+
     // Insert week
     const { data: week, error: wErr } = await supabase
       .from("weeks").insert({
@@ -242,7 +292,7 @@ export const generateWeekPlan = createServerFn({ method: "POST" })
     if (wErr) throw new Error(wErr.message);
 
     // Insert days
-    const daysToInsert = plan.days.map(d => ({
+    const daysToInsert = hydratedDays.map(d => ({
       week_id: week.id,
       user_id: userId,
       day_index: d.day_index,
@@ -252,6 +302,7 @@ export const generateWeekPlan = createServerFn({ method: "POST" })
     }));
     const { error: dErr } = await supabase.from("workout_days").insert(daysToInsert);
     if (dErr) throw new Error(dErr.message);
+
 
     return { weekId: week.id };
   });
