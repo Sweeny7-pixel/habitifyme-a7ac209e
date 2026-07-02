@@ -216,7 +216,7 @@ function DayPage() {
 
       {/* Sticky finish button (inside shell, above bottom nav) */}
       <div className="fixed inset-x-0 bottom-20 z-10 pointer-events-none">
-        <div className="mx-auto max-w-[375px] px-4 pointer-events-auto">
+        <div className="mx-auto max-w-[480px] px-4 pointer-events-auto">
           <button
             onClick={() => completeMut.mutate()}
             disabled={completeMut.isPending || !!day.completed_at}

@@ -68,8 +68,8 @@ function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--bg-base)] text-[var(--text-primary)]">
-      <div className="mx-auto flex min-h-screen w-full max-w-[375px] flex-col justify-center px-5 py-10">
+    <div className="min-h-dvh bg-[var(--bg-base)] text-[var(--text-primary)]">
+      <div className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col justify-center px-5 py-10">
         <Link to="/" className="mb-8 flex items-center gap-2">
           <div className="grid h-9 w-9 place-items-center rounded-[12px] bg-[var(--neon-orange)] text-white shadow-[0_0_18px_var(--neon-orange-glow)]">
             <Dumbbell className="h-5 w-5" />

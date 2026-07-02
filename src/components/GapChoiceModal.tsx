@@ -50,7 +50,7 @@ export function GapChoiceModal({
       role="dialog"
       aria-modal="true"
     >
-      <div className="glass-card w-full max-w-[375px] m-3 p-5 space-y-4">
+      <div className="glass-card w-full max-w-[480px] m-3 p-5 space-y-4">
         <div>
           <div className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--neon-orange)]">
             It's been a while
