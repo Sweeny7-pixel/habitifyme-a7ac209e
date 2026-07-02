@@ -15,7 +15,7 @@ export const Route = createFileRoute("/")({
 
 function Landing() {
   return (
-    <div className="min-h-screen bg-[var(--bg-base)] text-[var(--text-primary)]">
+    <div className="min-h-dvh bg-[var(--bg-base)] text-[var(--text-primary)]">
       <header className="mx-auto flex max-w-5xl items-center justify-between px-5 py-5">
         <div className="flex items-center gap-2">
           <div className="grid h-9 w-9 place-items-center rounded-[12px] bg-[var(--neon-orange)] text-white shadow-[0_0_18px_var(--neon-orange-glow)]">
