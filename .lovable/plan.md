@@ -1,29 +1,29 @@
-## Findings
+## Goal
+Add a full-screen "How it works" modal to the landing page that presents PRD, user journeys, wireframes, and design decisions — all in a single tabbed in-page modal (no new route, no URL change).
 
-Scanned `src/` for `375`, `100vh`, and `safe-area-inset-bottom`:
+## Files
 
-- Three files still cap content at `max-w-[375px]`:
-  - `src/components/GapChoiceModal.tsx:53` — modal card
-  - `src/routes/auth.tsx:72` — sign-in column
-  - `src/routes/_authenticated/day.$dayId.tsx:219` — sticky "Finish workout" bar
-- `src/routes/auth.tsx:72` uses `min-h-screen` (Tailwind maps this to `100vh` → shifts on mobile URL bar).
-- `src/lib/error-page.ts:9` inline CSS uses `min-height: 100vh`.
-- BottomNav (`src/routes/_authenticated/route.tsx:160`) already sets `paddingBottom: "calc(env(safe-area-inset-bottom) + 10px)"` — already safe-area aware. No change needed; this satisfies the intent (guarantees ≥10px base + full inset on notched phones), and is stronger than a bare `env(..., 12px)` fallback.
-- `.glass-card` (16px padding) and `.glass-stat` (14px/12px padding, `text-align: center`) are fluid — they already resize with their parent and have no fixed widths. At 320px the interior is 320 − 32 (shell px-4) = 288px, which is still comfortable for existing 2-col stat grids. No intrinsic overflow risk from the utilities themselves.
+**New:** `src/components/HowItWorksModal.tsx`
+- Signature: `export function HowItWorksModal({ onClose }: { onClose: () => void })`
+- Uses existing design tokens/utilities only (`glass-card`, `glass-pill`, `glass-btn`, `glass-btn-ghost`, `glass-modal-overlay`, `glass-sheet-close`, `sec-label`, `focus-pill`, `prog-bar`, neon color vars).
+- Modal shell: `glass-modal-overlay` backdrop + inner panel (inset-4 / md:inset-10, max-w 900px, rounded 28px, scrollable). Body scroll lock, Escape + backdrop click close, sticky close button (`glass-sheet-close`).
+- Sticky header inside panel: title "How HabitifyMe Works" + subtitle, tab bar directly beneath (sticky top:0, blurred bg).
+- 4 tabs via `useState` — no router:
+  - **Tab 1 PRD**: 6 collapsible section cards (A Problem / B V1 Shipped / C V2 Extended / D V3 Partial + Shipped fix / E Deferred to V4 / F Out of Scope) with letter badge + rotating chevron. Content sub-cards: research insights, persona (Arjun) with correctly attributed Parth quote, success metric card, per-feature "To Address" italic + bullets.
+  - **Tab 2 User Journeys**: 3 horizontal flex journey rows (overflow-x auto on mobile), each step is a ~140px `glass-card` with numbered pill, title, action, note, and colored emotion dot (green/amber/red). Arrow `→` between steps.
+  - **Tab 3 Wireframes**: 3 phone-shaped shells (280×560, rounded 32, bg var(--bg-base)) rendering Home / Calendar / Diet using real glass utilities (not gray placeholders). Numbered orange callout bubbles + legend below each shell. Side-by-side on desktop, stacked on mobile.
+  - **Tab 4 Design Decisions**: 6 decision cards — title, 2 option bullets, choice in neon-orange, 2-sentence rationale.
+- Icons from `lucide-react` only. No new packages, no data fetching, no auth.
 
-## Changes
+**Modified:** `src/routes/index.tsx`
+- Add `import { useState } from "react"` and `import { HowItWorksModal } from "@/components/HowItWorksModal"`.
+- Add `const [showHowItWorks, setShowHowItWorks] = useState(false)`.
+- Replace the `<a href="#how">How it works</a>` with a `<button type="button" onClick={() => setShowHowItWorks(true)}>` using the same classes.
+- Remove `id="how"` from the features `<section>`.
+- Render `{showHowItWorks && <HowItWorksModal onClose={() => setShowHowItWorks(false)} />}` before the outer closing `</div>`.
+- Hero, feature grid, footer unchanged.
 
-1. **`src/components/GapChoiceModal.tsx:53`** — replace `max-w-[375px]` with `max-w-[480px]` so the modal tracks the new shell width.
-2. **`src/routes/auth.tsx:72`** — replace `max-w-[375px]` with `max-w-[480px]`, and `min-h-screen` with `min-h-dvh` (Tailwind v4 arbitrary-value equivalent for `min-height: 100dvh`).
-3. **`src/routes/_authenticated/day.$dayId.tsx:219`** — replace `max-w-[375px]` with `max-w-[480px]` on the sticky "Finish workout" bar so it stays flush with shell content edges.
-4. **`src/lib/error-page.ts:9`** — replace `min-height: 100vh` with `min-height: 100dvh` in the inline error-page CSS.
-
-## Not changing
-
-- BottomNav padding — already handles safe area (see above).
-- `.glass-card`, `.glass-stat`, or any other interior spacing/wrapping. Nothing in the utilities is width-locked; will re-check visually only if the user reports overflow at either extreme.
-- No `min-w-[320px]` needed on the modal/auth/sticky bars since the shell already enforces `min-width: 320px` and these children are `mx-auto` inside it — adding it would create horizontal overflow at very narrow parents.
-
-## Verification
-
-After edits, `rg -n "max-w-\[375px\]|min-h-screen|100vh" src/ --glob '!routeTree.gen.ts'` should return zero shell-affecting hits (the only surviving `100vh` would be none).
+## Non-goals
+- No new route, no router changes, no URL update.
+- No changes to CSS tokens, existing utilities, or backend.
+- No new dependencies.
