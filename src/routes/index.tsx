@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Dumbbell, CheckCircle2, Sparkles, PlayCircle } from "lucide-react";
+import { HowItWorksModal } from "@/components/HowItWorksModal";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -14,6 +16,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Landing() {
+  const [showHowItWorks, setShowHowItWorks] = useState(false);
   return (
     <div className="min-h-dvh bg-[var(--bg-base)] text-[var(--text-primary)]">
       <header className="mx-auto flex max-w-5xl items-center justify-between px-5 py-5">
@@ -43,13 +46,17 @@ function Landing() {
           <Link to="/auth" className="glass-btn">
             Start free
           </Link>
-          <a href="#how" className="glass-btn glass-btn-ghost">
+          <button
+            type="button"
+            onClick={() => setShowHowItWorks(true)}
+            className="glass-btn glass-btn-ghost"
+          >
             How it works
-          </a>
+          </button>
         </div>
       </section>
 
-      <section id="how" className="mx-auto max-w-5xl px-5 pb-20">
+      <section className="mx-auto max-w-5xl px-5 pb-20">
         <div className="grid gap-4 md:grid-cols-3">
           {[
             { icon: <Sparkles className="h-5 w-5" />, title: "AI weekly plan", body: "Tell us your goal and gym setup. Get a beginner-safe split with sets, reps, and rest." },
