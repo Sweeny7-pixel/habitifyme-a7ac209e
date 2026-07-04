@@ -25,13 +25,19 @@ export const Route = createFileRoute("/_authenticated/calendar")({
   component: CalendarPage,
 });
 
-const DAY_SHORT = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December",
 ];
+// Month grid stays conventionally Monday-first for the calendar-style layout.
+const MONTH_DAY_SHORT = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 type Exercise = { name: string; primaryMuscles?: string[]; equipment?: string | null };
+
+/** Weekday short label for a Date object, e.g. "Sat". */
+function weekdayShortLabel(d: Date): string {
+  return d.toLocaleDateString("en-US", { weekday: "short" });
+}
 
 function startOfWeekMon(d: Date) {
   const out = new Date(d);
