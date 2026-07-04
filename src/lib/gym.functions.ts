@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Json } from "@/integrations/supabase/types";
 import { z } from "zod";
+import { awardXPInternal } from "./xp.functions";
 
 // ============ Schemas ============
 
@@ -71,6 +72,14 @@ export const saveProfile = createServerFn({ method: "POST" })
       updated_at: new Date().toISOString(),
     });
     if (error) throw new Error(error.message);
+    try {
+      await awardXPInternal(supabase, userId, {
+        reason: "profile_complete",
+        dedupeKey: `profile:${userId}`,
+      });
+    } catch (err) {
+      console.warn("[xp] profile_complete award failed", err);
+    }
     return { ok: true };
   });
 
@@ -436,6 +445,15 @@ export const completeWorkoutDay = createServerFn({ method: "POST" })
       .update({ completed_at: new Date().toISOString() })
       .eq("id", data.dayId).eq("user_id", userId);
     if (error) throw new Error(error.message);
+    try {
+      await awardXPInternal(supabase, userId, {
+        reason: "workout_complete",
+        dedupeKey: `workout_day:${data.dayId}`,
+        metadata: { workout_day_id: data.dayId },
+      });
+    } catch (err) {
+      console.warn("[xp] workout_complete award failed", err);
+    }
     return { ok: true };
   });
 
@@ -496,6 +514,16 @@ export const submitWeekReview = createServerFn({ method: "POST" })
       await evaluateAndNotifyAchievements(supabase, userId);
     } catch (err) {
       console.warn("[achievements] notify failed", err);
+    }
+
+    try {
+      await awardXPInternal(supabase, userId, {
+        reason: "weekly_review",
+        dedupeKey: `week_review:${data.week_id}`,
+        metadata: { week_id: data.week_id, completion_pct },
+      });
+    } catch (err) {
+      console.warn("[xp] weekly_review award failed", err);
     }
 
     return { ok: true, completion_pct };
