@@ -1086,7 +1086,7 @@ async function callGeminiForPromptPlan(
 RULES:
 - Use canonical exercise names from the yuhonas/free-exercise-db catalog (e.g. "Barbell Curl", "Dumbbell Bench Press", "Wide-Grip Lat Pulldown"). No slang, no abbreviations.
 - For each exercise, also provide the primary muscle ("chest", "biceps", "quadriceps", ...) and equipment ("barbell", "dumbbell", "cable", "machine", "body only", ...). These hints help match real exercises.
-- Number of days MUST equal days_per_week. List only training days (no rest days).
+- Number of days MUST equal days_per_week. List only training days (no rest days). Sunday is always a rest day — never schedule a workout on Sunday.
 - 4-7 exercises per day. Reps as a string like "8-12" or "AMRAP". Rest in seconds (60, 90, 120).
 - Diet must be India-friendly (dal, roti, paneer, eggs, rice, chicken, curd). 3 sample meals. Protein 1.4-2.0 g/kg bodyweight.
 - If allergies are listed, NEVER include them in any meal; substitute safely and mention substitution in diet.notes.
