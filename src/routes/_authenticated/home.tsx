@@ -111,6 +111,7 @@ function HomePage() {
   const gymCheckinFn = useServerFn(gymCheckin);
   const awardSundayPlanningXPFn = useServerFn(awardSundayPlanningXP);
   const getHabitStatsFn = useServerFn(getHomeHabitStats);
+  const getWeekDietFn = useServerFn(getWeekDiet);
 
   const profileQ = useQuery({ queryKey: ["profile"], queryFn: () => getProfileFn() });
   const planQ = useQuery({ queryKey: ["planWeeks"], queryFn: () => getAllFn() });
@@ -236,6 +237,16 @@ function HomePage() {
     [days, activeWeek],
   );
 
+  // Fetch the canonical week diet so Home matches Diet/Calendar exactly (BUG-015).
+  // Same query key as the Diet screen → shared cache. Hook must run before any
+  // early return so React's hooks order stays stable across renders.
+  const weekDietQ = useQuery({
+    queryKey: ["weekDiet", activeWeek?.id ?? "none"],
+    queryFn: () => getWeekDietFn({ data: { weekId: activeWeek!.id } }),
+    enabled: !!activeWeek,
+    staleTime: 60_000,
+  });
+
   if (profileQ.isLoading || planQ.isLoading) {
     return (
       <div className="space-y-3 pt-3">
@@ -281,15 +292,6 @@ function HomePage() {
 
   if (!activeWeek) return null;
   const diet = activeWeek.diet_json as DietJson | null;
-  // Fetch the canonical week diet so Home matches Diet/Calendar exactly (BUG-015).
-  // Same query key as the Diet screen → shared cache, no extra round-trip after
-  // the user has visited either surface.
-  const dietFn = useServerFn(getWeekDiet);
-  const weekDietQ = useQuery({
-    queryKey: ["weekDiet", activeWeek.id],
-    queryFn: () => dietFn({ data: { weekId: activeWeek.id } }),
-    staleTime: 60_000,
-  });
   const dietSource = weekDietQ.data?.diet ?? activeWeek.diet_json;
   const dietStats = getTodayDietStats(dietSource, activeWeek.start_date);
   const totalDays = activeDays.length;
