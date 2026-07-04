@@ -471,19 +471,19 @@ function HomePage() {
               {stats.habitScore}
             </div>
             <div className="text-[8px] text-[var(--text-muted)] mt-0.5 leading-none">
-              {stats.segment.label}
+              {isBrandNew ? "Building" : stats.segment.label}
             </div>
           </div>
         )}
       </div>
 
       {/* Focus */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className="focus-pill">
-          <Target className="h-3.5 w-3.5" />{" "}
-          {activeWeek.plan_summary?.slice(0, 38) ?? "Your focus"}
+      <div className="flex items-start gap-2 flex-wrap">
+        <span className="focus-pill max-w-full whitespace-normal break-words leading-snug">
+          <Target className="h-3.5 w-3.5 shrink-0" />{" "}
+          {truncateWords(activeWeek.plan_summary, 60) || "Your focus"}
         </span>
-        {stats && stats.segment.label !== "Building" && (
+        {stats && !isBrandNew && stats.segment.label !== "Building" && (
           <span
             className="glass-pill text-[10px]"
             style={{ color: stats.segment.color, borderColor: `${stats.segment.color}44` }}
