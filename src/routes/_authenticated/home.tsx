@@ -246,22 +246,34 @@ function HomePage() {
 
   if (weeks.length === 0) {
     return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center text-center px-4">
-        <div className="grid h-14 w-14 place-items-center rounded-[18px] bg-[var(--neon-orange)] text-white shadow-[0_0_24px_rgba(255,107,53,0.45)] mb-4">
-          <Sparkles className="h-7 w-7" />
+      <>
+        <div className="flex min-h-[60vh] flex-col items-center justify-center text-center px-4">
+          <div className="grid h-14 w-14 place-items-center rounded-[18px] bg-[var(--neon-orange)] text-white shadow-[0_0_24px_rgba(255,107,53,0.45)] mb-4">
+            <Sparkles className="h-7 w-7" />
+          </div>
+          <h2 className="text-lg font-extrabold text-[var(--text-primary)]">No plan yet</h2>
+          <p className="mt-1 max-w-xs text-sm text-[var(--text-secondary)]">
+            Generate a personalized 4-week training plan based on your profile.
+          </p>
+          <button
+            disabled={generate.isPending}
+            onClick={() => setStartPickerFor({ kind: "regenerate" })}
+            className="glass-btn mt-5 max-w-xs"
+          >
+            {generate.isPending ? "Generating…" : "Generate 4-week plan"}
+          </button>
         </div>
-        <h2 className="text-lg font-extrabold text-[var(--text-primary)]">No plan yet</h2>
-        <p className="mt-1 max-w-xs text-sm text-[var(--text-secondary)]">
-          Generate a personalized 4-week training plan based on your profile.
-        </p>
-        <button
-          disabled={generate.isPending}
-          onClick={() => generate.mutate()}
-          className="glass-btn mt-5 max-w-xs"
-        >
-          {generate.isPending ? "Generating…" : "Generate 4-week plan"}
-        </button>
-      </div>
+
+        <StartDateModal
+          open={startPickerFor?.kind === "regenerate"}
+          onOpenChange={(v) => !v && setStartPickerFor(null)}
+          onConfirm={(iso) => generate.mutate(iso)}
+          busy={generate.isPending}
+          title="When do you want to start?"
+          description="Day 1 of your Week 1 plan will be this date."
+          confirmLabel="Generate my plan"
+        />
+      </>
     );
   }
 
