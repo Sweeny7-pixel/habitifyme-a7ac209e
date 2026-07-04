@@ -49,13 +49,6 @@ export const Route = createFileRoute("/_authenticated/home")({
   component: HomePage,
 });
 
-type DietJson = {
-  daily_calories: number;
-  daily_protein_g: number;
-  notes: string;
-  meals: { name: string; items: string }[];
-};
-
 type Meal = { items: string[]; approxCalories: number };
 type DietDay = {
   day: string;
@@ -77,28 +70,18 @@ function getTodayDietStats(
 ): {
   calories: number | null;
   proteinG: number | null;
-  isNewFormat: boolean;
 } {
-  if (!dietJson) return { calories: null, proteinG: null, isNewFormat: false };
-  const asNew = dietJson as SevenDayDiet;
-  if (Array.isArray(asNew?.days) && asNew.days.length === 7) {
+  const asNew = dietJson as SevenDayDiet | null;
+  if (asNew && Array.isArray(asNew.days) && asNew.days.length === 7) {
     const idx = dietIndexForToday(weekStartIso ?? null);
     const today = asNew.days[idx];
     if (today) {
       const kcal = today.totalApproxCalories;
       const proteinG = Math.round((kcal * 0.3) / 4);
-      return { calories: kcal, proteinG, isNewFormat: true };
+      return { calories: kcal, proteinG };
     }
   }
-  const asOld = dietJson as { daily_calories?: number; daily_protein_g?: number };
-  if (asOld?.daily_calories) {
-    return {
-      calories: asOld.daily_calories,
-      proteinG: asOld.daily_protein_g ?? null,
-      isNewFormat: false,
-    };
-  }
-  return { calories: null, proteinG: null, isNewFormat: false };
+  return { calories: null, proteinG: null };
 }
 
 function HomePage() {
