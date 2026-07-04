@@ -72,6 +72,14 @@ export const saveProfile = createServerFn({ method: "POST" })
       updated_at: new Date().toISOString(),
     });
     if (error) throw new Error(error.message);
+    try {
+      await awardXPInternal(supabase, userId, {
+        reason: "profile_complete",
+        dedupeKey: `profile:${userId}`,
+      });
+    } catch (err) {
+      console.warn("[xp] profile_complete award failed", err);
+    }
     return { ok: true };
   });
 
