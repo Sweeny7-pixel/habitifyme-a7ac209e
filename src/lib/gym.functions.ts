@@ -388,7 +388,10 @@ Schedule (day_index → date): ${scheduleDates.map((d) => `${d.day_index}=${d.da
     if (wErr) throw new Error(wErr.message);
 
     // Insert days
-    const daysToInsert = hydratedDays.map(d => ({
+    // Enforce Sunday-as-rest by re-mapping day_index to the allowed schedule.
+    const reindexedDays = reindexDaysSkipSunday(hydratedDays, startDateIso);
+
+    const daysToInsert = reindexedDays.map(d => ({
       week_id: week.id,
       user_id: userId,
       day_index: d.day_index,
