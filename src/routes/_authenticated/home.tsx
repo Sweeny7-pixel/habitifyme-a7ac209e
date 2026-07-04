@@ -602,7 +602,7 @@ function HomePage() {
       )}
 
       {/* Diet preview */}
-      {(dietStats.calories || diet) && (
+      {(dietLoading || dietStats.calories) && (
         <section>
           <div className="sec-label mb-2 flex items-center gap-1.5">
             <Utensils className="h-3.5 w-3.5" /> Today's diet target
@@ -611,26 +611,17 @@ function HomePage() {
             <div className="grid grid-cols-2 gap-3">
               <div className="glass-stat">
                 <div className="text-[22px] font-extrabold text-[var(--text-primary)]">
-                  {dietStats.calories ?? diet?.daily_calories ?? "—"}
+                  {dietLoading ? "…" : (dietStats.calories ?? "—")}
                 </div>
                 <div className="sec-label mt-1">Kcal</div>
               </div>
               <div className="glass-stat">
                 <div className="text-[22px] font-extrabold text-[var(--text-primary)]">
-                  {dietStats.proteinG
-                    ? `${dietStats.proteinG}g`
-                    : diet?.daily_protein_g
-                      ? `${diet.daily_protein_g}g`
-                      : "—"}
+                  {dietLoading ? "…" : dietStats.proteinG ? `${dietStats.proteinG}g` : "—"}
                 </div>
                 <div className="sec-label mt-1">Protein</div>
               </div>
             </div>
-            {diet?.notes && (
-              <p className="mt-3 text-xs text-[var(--text-secondary)] leading-relaxed">
-                {diet.notes}
-              </p>
-            )}
             <Link to="/diet" className="glass-btn glass-btn-ghost glass-btn-sm mt-3 w-full">
               View 7-day diet plan
             </Link>
