@@ -1111,7 +1111,7 @@ Return ONLY a JSON object (no markdown, no backticks) matching:
 export const generatePlanFromPrompt = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((d: unknown) =>
-    z.object({ prompt: z.string().min(10).max(500) }).parse(d),
+    z.object({ prompt: z.string().min(10).max(500), startDate: StartDateInput }).parse(d),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
