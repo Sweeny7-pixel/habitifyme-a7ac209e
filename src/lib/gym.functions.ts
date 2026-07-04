@@ -1206,6 +1206,8 @@ export const generatePlanFromPrompt = createServerFn({ method: "POST" })
     const startNum =
       Math.max(0, ...(completedWeeks ?? []).map((w) => w.week_number ?? 0)) + 1;
 
+    const weekStartIso = validateStartDate(data.startDate);
+
     const { data: wRow, error: wErr } = await supabase
       .from("weeks")
       .insert({
@@ -1214,6 +1216,7 @@ export const generatePlanFromPrompt = createServerFn({ method: "POST" })
         plan_summary: plan.plan_summary,
         diet_json: plan.diet,
         status: "active",
+        start_date: weekStartIso,
       })
       .select()
       .single();
@@ -1226,6 +1229,7 @@ export const generatePlanFromPrompt = createServerFn({ method: "POST" })
       title: d.title,
       focus: d.focus,
       exercises_json: d.exercises_json as unknown as Json,
+      workout_date: addDaysIso(weekStartIso, Math.max(0, d.day_index - 1)),
     }));
     const { error: dErr } = await supabase.from("workout_days").insert(daysRows);
     if (dErr) throw new Error(dErr.message);
