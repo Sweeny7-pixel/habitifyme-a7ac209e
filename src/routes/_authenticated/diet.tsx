@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { getWeekDiet, getAllWeeks } from "@/lib/gym.functions";
-import { Utensils, Flame, Loader2, Dumbbell, Moon, RefreshCw, Coffee, Soup, Apple, ChefHat, AlertTriangle } from "lucide-react";
+import { logDietDay, getTodayDietLog } from "@/lib/checkin";
+import { Utensils, Flame, Loader2, Dumbbell, Moon, RefreshCw, Coffee, Soup, Apple, ChefHat, AlertTriangle, CheckCircle2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/diet")({
