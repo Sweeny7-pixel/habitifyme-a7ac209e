@@ -25,6 +25,7 @@ export const getHomeHabitStats = createServerFn({ method: "GET" })
       habitScoreRes,
       achievementsRes,
       weeklyXPRes,
+      streak,
     ] = await Promise.all([
       getTotalXPInternal(supabase, userId),
       supabase
