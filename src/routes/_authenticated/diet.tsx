@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { getWeekDiet, getAllWeeks } from "@/lib/gym.functions";
-import { Utensils, Flame, Loader2, Dumbbell, Moon, RefreshCw, Coffee, Soup, Apple, ChefHat, AlertTriangle } from "lucide-react";
+import { logDietDay, getTodayDietLog } from "@/lib/checkin";
+import { Utensils, Flame, Loader2, Dumbbell, Moon, RefreshCw, Coffee, Soup, Apple, ChefHat, AlertTriangle, CheckCircle2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/diet")({
@@ -106,10 +107,27 @@ function DietPage() {
 function WeekDietView({ weekId }: { weekId: string }) {
   const qc = useQueryClient();
   const getDietFn = useServerFn(getWeekDiet);
+  const logDietFn = useServerFn(logDietDay);
+  const getDietLogFn = useServerFn(getTodayDietLog);
   const dietQ = useQuery({
     queryKey: ["weekDiet", weekId],
     queryFn: () => getDietFn({ data: { weekId } }),
     retry: 1,
+  });
+  const dietLogQ = useQuery({
+    queryKey: ["dietLogToday"],
+    queryFn: () => getDietLogFn(),
+    staleTime: 60_000,
+  });
+  const logDietMut = useMutation({
+    mutationFn: () => logDietFn({ data: {} }),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ["dietLogToday"] });
+      qc.invalidateQueries({ queryKey: ["homeHabitStats"] });
+      if (res.alreadyLogged) toast.info("Already logged today 👍");
+      else toast.success(`Diet logged! +${res.xpAwarded} XP 🥗`);
+    },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const [dayIdx, setDayIdx] = useState<number>(() => todayIndex());
@@ -192,6 +210,30 @@ function WeekDietView({ weekId }: { weekId: string }) {
         {isToday && <span className="glass-pill">Today</span>}
         <span className="ml-auto text-[11px] font-semibold text-[var(--text-secondary)]">{day.day}</span>
       </div>
+
+      {/* Mark diet followed (today only) */}
+      {isToday && (
+        <button
+          onClick={() => logDietMut.mutate()}
+          disabled={logDietMut.isPending || dietLogQ.data?.logged}
+          className={`flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-extrabold transition-all ${
+            dietLogQ.data?.logged
+              ? "bg-[rgba(0,229,160,0.15)] text-[var(--neon-green)] border border-[rgba(0,229,160,0.35)]"
+              : "bg-[rgba(255,107,53,0.18)] text-[var(--neon-orange)] border border-[rgba(255,107,53,0.45)] hover:bg-[rgba(255,107,53,0.28)]"
+          }`}
+        >
+          {dietLogQ.data?.logged ? (
+            <>
+              <CheckCircle2 className="h-4 w-4" /> Logged today
+            </>
+          ) : (
+            <>
+              <Sparkles className="h-4 w-4" /> Mark diet followed (+15 XP)
+            </>
+          )}
+        </button>
+      )}
+
 
       {/* Calorie donut + macro pills */}
       <div className="glass-card glass-card-amber flex items-center gap-4">

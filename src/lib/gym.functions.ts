@@ -63,7 +63,7 @@ export type Plan = z.infer<typeof PlanSchema>;
 
 export const saveProfile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => ProfileInput.parse(d))
+  .validator((d: unknown) => ProfileInput.parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { error } = await supabase.from("profiles").upsert({
@@ -97,7 +97,7 @@ export const getProfile = createServerFn({ method: "GET" })
 
 export const updateAllergies = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ allergies: z.string() }).parse(d))
+  .validator((d: unknown) => z.object({ allergies: z.string() }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { error } = await supabase
@@ -190,7 +190,7 @@ const SYSTEM_PROMPT = `You are HabitifyMe, a cautious, encouraging fitness coach
 
 export const generateWeekPlan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ weekNumber: z.number().int().min(1).max(52) }).parse(d))
+  .validator((d: unknown) => z.object({ weekNumber: z.number().int().min(1).max(52) }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { weekNumber } = data;
@@ -334,7 +334,7 @@ export const getCurrentWeek = createServerFn({ method: "GET" })
 
 export const getWeek = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ weekId: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ weekId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { data: week } = await supabase
@@ -347,7 +347,7 @@ export const getWeek = createServerFn({ method: "POST" })
 
 export const getDay = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ dayId: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ dayId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { data: day } = await supabase
@@ -414,7 +414,7 @@ export const getDay = createServerFn({ method: "POST" })
 
 export const logExercise = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({
+  .validator((d: unknown) => z.object({
     workout_day_id: z.string().uuid(),
     exercise_index: z.number().int(),
     exercise_name: z.string(),
@@ -438,7 +438,7 @@ export const logExercise = createServerFn({ method: "POST" })
 
 export const completeWorkoutDay = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ dayId: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ dayId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
 
@@ -512,7 +512,7 @@ export const resetUserPlan = createServerFn({ method: "POST" })
 
 export const submitWeekReview = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({
+  .validator((d: unknown) => z.object({
     week_id: z.string().uuid(),
     energy: z.number().int().min(1).max(5),
     soreness: z.number().int().min(1).max(5),
@@ -1040,7 +1040,7 @@ Return ONLY a JSON object (no markdown, no backticks) matching:
 
 export const generatePlanFromPrompt = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z.object({ prompt: z.string().min(10).max(500) }).parse(d),
   )
   .handler(async ({ data, context }) => {
@@ -1268,7 +1268,7 @@ The "days" array MUST have exactly 7 entries in order Monday..Sunday.`;
 
 export const getWeekDiet = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z.object({
       weekId: z.string().uuid().optional(),
       regenerate: z.boolean().optional().default(false),

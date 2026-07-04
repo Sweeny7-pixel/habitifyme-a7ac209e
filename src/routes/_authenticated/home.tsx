@@ -258,7 +258,6 @@ function HomePage() {
   const totalDays = activeDays.length;
   const doneDays = activeDays.filter((d) => d.completed_at).length;
   const allDone = doneDays === totalDays && totalDays > 0;
-  const streak = doneDays;
   const monthName = new Date().toLocaleString(undefined, { month: "long" });
 
   const stats = habitStatsQ.data;
@@ -311,10 +310,12 @@ function HomePage() {
         </div>
         <div className="min-w-0 flex-1">
           <div className="text-lg font-extrabold tracking-tight text-[var(--text-primary)]">
-            {streak} day streak
+            {stats?.currentStreak ?? 0} day streak
           </div>
           <div className="text-xs text-[var(--text-secondary)] mt-0.5">
-            {doneDays}/{totalDays} workouts done this week
+            {(stats?.currentStreak ?? 0) === 0
+              ? "Start your streak — do today's workout"
+              : `Longest: ${stats?.longestStreak ?? 0} days · ${doneDays}/${totalDays} this week`}
           </div>
         </div>
         {/* Gym Check-in button */}

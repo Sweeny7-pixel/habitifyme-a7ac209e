@@ -6,6 +6,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { getTotalXPInternal, getLevelProgress, getLevelTitle } from "./xp";
 import { getHabitSegment } from "./habit-score";
+import { getStreakInternal } from "./streak";
 
 export const getHomeHabitStats = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -24,6 +25,7 @@ export const getHomeHabitStats = createServerFn({ method: "GET" })
       habitScoreRes,
       achievementsRes,
       weeklyXPRes,
+      streak,
     ] = await Promise.all([
       getTotalXPInternal(supabase, userId),
       supabase
@@ -48,6 +50,7 @@ export const getHomeHabitStats = createServerFn({ method: "GET" })
         .select("amount")
         .eq("user_id", userId)
         .gte("created_at", weekAgo),
+      getStreakInternal(supabase, userId),
     ]);
 
     const levelInfo = getLevelProgress(totalXP);
@@ -73,5 +76,8 @@ export const getHomeHabitStats = createServerFn({ method: "GET" })
       segment,
       recentAchievements,
       weeklyXP,
+      currentStreak: streak.current,
+      longestStreak: streak.longest,
+      lastWorkoutAt: streak.lastCompletedAt,
     };
   });
