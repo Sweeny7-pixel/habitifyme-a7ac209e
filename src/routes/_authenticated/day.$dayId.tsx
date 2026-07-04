@@ -134,7 +134,18 @@ function DayPage() {
       </button>
 
       <div>
-        <span className="glass-pill">Day {day.day_index}</span>
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="glass-pill">Day {day.day_index}</span>
+          {day.workout_date && (
+            <span className="glass-pill">
+              {new Date(day.workout_date + "T00:00:00").toLocaleDateString(undefined, {
+                weekday: "short",
+                month: "short",
+                day: "numeric",
+              })}
+            </span>
+          )}
+        </div>
         <h1 className="mt-2 text-[22px] font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
           {day.title}
         </h1>
