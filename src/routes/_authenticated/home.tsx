@@ -640,7 +640,7 @@ function HomePage() {
         </p>
       </div>
 
-      {/* Confirm regenerate modal */}
+      {/* Confirm regenerate modal → then StartDateModal */}
       {confirmOpen && (
         <Modal onClose={() => setConfirmOpen(false)} title="Regenerate 4-week plan?">
           <p className="text-sm text-[var(--text-secondary)]">
@@ -656,10 +656,13 @@ function HomePage() {
             </button>
             <button
               disabled={generate.isPending}
-              onClick={() => generate.mutate()}
+              onClick={() => {
+                setConfirmOpen(false);
+                setStartPickerFor({ kind: "regenerate" });
+              }}
               className="glass-btn flex-[2]"
             >
-              {generate.isPending ? "Generating…" : "Yes, regenerate"}
+              Choose start date →
             </button>
           </div>
         </Modal>
@@ -701,14 +704,36 @@ function HomePage() {
             </button>
             <button
               disabled={generateFromPrompt.isPending || customPrompt.trim().length < 10}
-              onClick={() => generateFromPrompt.mutate(customPrompt.trim())}
+              onClick={() => {
+                const prompt = customPrompt.trim();
+                setPromptOpen(false);
+                setStartPickerFor({ kind: "prompt", prompt });
+              }}
               className="glass-btn flex-[2]"
             >
-              {generateFromPrompt.isPending ? "Generating…" : "Generate plan"}
+              Choose start date →
             </button>
           </div>
         </Modal>
       )}
+
+      {/* Shared start-date picker (fires after user confirms regenerate/prompt) */}
+      <StartDateModal
+        open={startPickerFor !== null}
+        onOpenChange={(v) => !v && setStartPickerFor(null)}
+        onConfirm={(iso) => {
+          if (startPickerFor?.kind === "regenerate") {
+            generate.mutate(iso);
+          } else if (startPickerFor?.kind === "prompt") {
+            generateFromPrompt.mutate({ prompt: startPickerFor.prompt, startDate: iso });
+          }
+        }}
+        busy={generate.isPending || generateFromPrompt.isPending}
+        title="When do you want to start?"
+        description="Day 1 of your new plan will be this date."
+        confirmLabel="Generate my plan"
+      />
+
 
       {/* Recovery modal (3–6 day gap) */}
       {showRecovery && (
