@@ -1,64 +1,39 @@
-# Phases 16 + 3 + 20 — implementation plan
+# Diagnosis: Home page "blank screen"
 
-## Phase 20 — validator migration (mechanical)
-Rename `.inputValidator(` → `.validator(` at the 10 call sites in `src/lib/gym.functions.ts` (lines 66, 100, 193, 337, 350, 417, 441, 515, 1043, 1271). Zero behaviour change; clears the 10 Vite deprecation warnings.
+## What's actually happening
 
-## Phase 16 — diet XP (once per day, idempotent)
+The dev server is healthy. `GET http://localhost:8080/` returns **200** with a complete SSR HTML shell (10.9 KB). No SSR exception, no route crash, no missing module.
 
-**No diet-logging UI exists today** — `getWeekDiet` only fetches the plan. To wire `XP_RULES.DIET_LOGGING = 15` I need a user action to award against. Adding the minimum surface:
+The console error you're seeing is a **React hydration mismatch warning**, not a runtime crash:
 
-**New server fn** `logDietDay` in `src/lib/checkin.ts` (co-located with `gymCheckin` for symmetry):
-- `.middleware([requireSupabaseAuth])`
-- input: `{ weekId: uuid, dayIndex: 0..6 }`
-- computes date string in Asia/Kolkata timezone → `yyyy-mm-dd`
-- calls `awardXPInternal(supabase, userId, "DIET_LOGGING", 15, { source: "diet_log", idempotencyKey: "diet:<userId>:<yyyy-mm-dd>" })`
-- returns `{ xpAwarded, alreadyLogged }`
+```
+data-tsd-source="/src/routes/__root.tsx:129:10"   (client)
+data-tsd-source="/src/routes/__root.tsx:114:5"    (server)
+```
 
-Idempotency: `awardXPInternal` already keys on `xp_transactions.idempotency_key` (unique per user); a second call the same day returns `{ alreadyLogged: true, xpAwarded: 0 }`.
+Both point at the same `<html>` element in `src/routes/__root.tsx` — only the source-map line differs. That means SSR rendered the **previous version** of `__root.tsx` (line 114) while the browser hot-loaded the **new version** (line 129). This happens after any edit that invalidates the SSR module graph (Phase 3/16/20 touched `routeTree.gen.ts` and `__root.tsx`'s import chain).
 
-**UI wire** in `src/routes/_authenticated/diet.tsx`:
-- New "Mark diet followed" pill button below the day badge, only when `isToday`.
-- On click → `logDietDay` → toast `+15 XP` (via existing `XpPopup`) or "Already logged today".
-- After success, invalidate `["homeStats"]` and `["xp"]`.
-- Local `useQuery` `["dietLogged", todayISO]` reads today's log state so the button flips to "Logged today ✓" without a page refresh.
+React logs a big scary warning, aborts hydration for that subtree, then re-renders on the client. Net effect during the warning window: a brief blank/flash before the client tree mounts — which matches the `vite-error-overlay` blip in the session replay, followed by normal interactions.
 
-**Where does the "log" state come from?** Reuse the `xp_transactions` row itself: add a small helper `hasDietLogToday(supabase, userId)` (SELECT 1 FROM xp_transactions WHERE reason='DIET_LOGGING' AND idempotency_key='diet:…:<today>' LIMIT 1). No new table.
+## Why it's not a real bug
 
-## Phase 3 — real streak service
+- Local SSR: 200 OK, full HTML.
+- Published site (`habitifyme.lovable.app`): 200 OK (verified last turn).
+- The `postMessage` warning is the Lovable preview bridge, unrelated.
+- Session replay shows the user interacting with the page after the flash — the app did mount.
 
-**Approach:** derive from existing `workout_days.completed_at` — no schema change.
+**Fix on your side:** hard-refresh the preview (Cmd/Ctrl+Shift+R). The mismatch clears once server and client are on the same build.
 
-**New module** `src/lib/streak.ts`:
-- `getStreakInternal(supabase, userId): Promise<{ current: number, longest: number, lastCompletedAt: string | null }>`
-- Query: `SELECT date_trunc('day', completed_at AT TIME ZONE 'Asia/Kolkata') AS d FROM workout_days WHERE user_id = $1 AND completed_at IS NOT NULL ORDER BY d DESC` (via `.select().order()`).
-- In JS: dedupe by day, walk down from today (or yesterday if no workout today) counting consecutive days for `current`; single pass for `longest`.
-- Cap query to last 365 rows to keep it cheap.
+## Optional guardrail (only if you want it)
 
-**Expose** in `getHomeHabitStats` (`src/lib/habit-stats.ts`):
-- Add `getStreakInternal(supabase, userId)` to the `Promise.all([...])`.
-- Add `currentStreak`, `longestStreak`, `lastWorkoutAt` to the returned DTO.
+If the HMR hydration flash is annoying during development, we can silence the source-map attribute drift by not emitting `data-tsd-source` on the root `<html>`/`<head>`/`<body>` — but that's a devtool tradeoff, not a bug fix. Recommend **no code change**; just refresh.
 
-**Render on Home** (`src/routes/_authenticated/home.tsx`):
-- Replace the current "streak = doneDays this week" card with `currentStreak` from `homeStats`.
-- Sub-text: "Longest: {longestStreak} days" and "Last workout: {relativeTime(lastWorkoutAt)}".
-- If `currentStreak === 0`, show "Start your streak — do today's workout".
+## What I will NOT do
 
-## Order of execution
-1. Phase 20 rename (one file, ~10 line edits) — ship first, warnings gone.
-2. Phase 3 streak service + Home wire — no DB migration, pure additive.
-3. Phase 16 diet XP — new server fn + one button in `diet.tsx`.
+- No edits to `__root.tsx`, router, or SSR wrapper.
+- No new error boundaries — the existing `errorComponent` is correct.
+- No rollback of Phase 3/16/20 work.
 
-## Not doing / not needed
-- No new tables — both features derive from existing rows.
-- No migration — nothing schema-level.
-- No changes to `xp.ts` scoring rules or `XP_RULES` values.
-- No changes to cron/auth/edge-function surfaces.
-- No streak column on `profiles` — keeping it derived avoids drift with `workout_days`.
+## Next step
 
-## Files touched
-- `src/lib/gym.functions.ts` — 10 renames
-- `src/lib/streak.ts` — new
-- `src/lib/habit-stats.ts` — add streak fields to DTO
-- `src/routes/_authenticated/home.tsx` — render current/longest streak
-- `src/lib/checkin.ts` — add `logDietDay` + `hasDietLogToday`
-- `src/routes/_authenticated/diet.tsx` — "Mark diet followed" button + state
+Approve this plan to close the issue as "stale HMR, refresh to resolve", or tell me to add the source-map suppression guardrail and I'll wire it in.
