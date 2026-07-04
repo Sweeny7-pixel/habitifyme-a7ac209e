@@ -111,17 +111,14 @@ function mapAiError(err: unknown): Error {
 }
 
 async function callGeminiForPlan(systemPrompt: string, userPrompt: string): Promise<Plan> {
-  const key = process.env.LOVABLE_API_KEY;
-  if (!key) throw new Error("LOVABLE_API_KEY missing");
-
   const { generateText } = await import("ai");
-  const { createLovableAiGatewayProvider } = await import("./ai-gateway.server");
-  const gateway = createLovableAiGatewayProvider(key);
+  const { createGeminiProvider } = await import("./ai-gateway.server");
+  const gateway = createGeminiProvider();
 
   let text: string;
   try {
     const result = await generateText({
-    model: gateway("google/gemini-3-flash-preview"),
+    model: gateway("gemini-3-flash-preview"),
     system: systemPrompt,
     prompt: userPrompt + "\n\nReturn ONLY a valid JSON object matching this TypeScript type and nothing else (no markdown, no backticks):\n\n" +
 `{
@@ -725,12 +722,9 @@ async function callGeminiForFourWeekPlan(
   profile: Record<string, unknown>,
   allowed: { id: string; name: string; primaryMuscles: string[]; equipment: string | null; level: string }[],
 ): Promise<FourWeekPlan> {
-  const key = process.env.LOVABLE_API_KEY;
-  if (!key) throw new Error("LOVABLE_API_KEY missing");
-
   const { generateText } = await import("ai");
-  const { createLovableAiGatewayProvider } = await import("./ai-gateway.server");
-  const gateway = createLovableAiGatewayProvider(key);
+  const { createGeminiProvider } = await import("./ai-gateway.server");
+  const gateway = createGeminiProvider();
 
   const system = `You are HabitifyMe, a careful coach for budget-gym beginners in India. You will design a 4-week training block.
 RULES:
@@ -762,7 +756,7 @@ Return ONLY a JSON object (no markdown) matching:
   let text: string;
   try {
     const result = await generateText({
-      model: gateway("google/gemini-3-flash-preview"),
+      model: gateway("gemini-3-flash-preview"),
       system,
       prompt: user,
     });
@@ -961,12 +955,9 @@ async function callGeminiForPromptPlan(
   userPrompt: string,
   profile: Record<string, unknown> | null,
 ): Promise<PromptPlan> {
-  const key = process.env.LOVABLE_API_KEY;
-  if (!key) throw new Error("LOVABLE_API_KEY missing");
-
   const { generateText } = await import("ai");
-  const { createLovableAiGatewayProvider } = await import("./ai-gateway.server");
-  const gateway = createLovableAiGatewayProvider(key);
+  const { createGeminiProvider } = await import("./ai-gateway.server");
+  const gateway = createGeminiProvider();
 
   const system = `You are HabitifyMe. Convert a user's workout-plan request into a structured JSON plan.
 RULES:
@@ -1190,12 +1181,9 @@ async function callGeminiForSevenDayDiet(input: {
   workoutDays: string[];
   restDayCount: number;
 }): Promise<SevenDayDiet> {
-  const key = process.env.LOVABLE_API_KEY;
-  if (!key) throw new Error("LOVABLE_API_KEY missing");
-
   const { generateText } = await import("ai");
-  const { createLovableAiGatewayProvider } = await import("./ai-gateway.server");
-  const gateway = createLovableAiGatewayProvider(key);
+  const { createGeminiProvider } = await import("./ai-gateway.server");
+  const gateway = createGeminiProvider();
 
   const system = `You are a certified Indian sports nutritionist. You design simple, budget-friendly Indian diet plans for beginner gym-goers. Never give medical advice.`;
 

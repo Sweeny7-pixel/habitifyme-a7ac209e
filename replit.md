@@ -32,7 +32,7 @@ Set in `.env` (also in Replit Secrets/Env Vars):
 - `SUPABASE_PROJECT_ID` — Supabase project ID
 - `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_SUPABASE_PROJECT_ID` — same values prefixed for Vite client-side access
 - `SESSION_SECRET` — server session secret (in Replit Secrets)
-- `LOVABLE_API_KEY` — AI gateway key (managed by Lovable platform)
+- `GEMINI_API_KEY` — Google Gemini API key (stored in Replit Secrets). Used for all AI-generated workout and diet plans.
 
 ## Database Migrations
 

@@ -1,12 +1,18 @@
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 
-export function createLovableAiGatewayProvider(lovableApiKey: string) {
+/**
+ * Direct Google Gemini provider using the OpenAI-compatible endpoint.
+ * Reads GEMINI_API_KEY from Replit Secrets / environment variables.
+ */
+export function createGeminiProvider() {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error("GEMINI_API_KEY missing");
+
   return createOpenAICompatible({
-    name: "lovable",
-    baseURL: "https://ai.gateway.lovable.dev/v1",
+    name: "gemini",
+    baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
     headers: {
-      "Lovable-API-Key": lovableApiKey,
-      "X-Lovable-AIG-SDK": "vercel-ai-sdk",
+      Authorization: `Bearer ${apiKey}`,
     },
   });
 }
