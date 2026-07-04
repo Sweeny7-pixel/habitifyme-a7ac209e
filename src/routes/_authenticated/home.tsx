@@ -274,8 +274,10 @@ function HomePage() {
   }
 
   if (!activeWeek) return null;
-  const diet = activeWeek.diet_json as DietJson | null;
-  const dietSource = weekDietQ.data?.diet ?? activeWeek.diet_json;
+  // BUG-101: only use the canonical 7-day diet from getWeekDiet, never the
+  // legacy `weeks.diet_json` snapshot, so Home / Calendar / Diet always agree.
+  const dietSource = weekDietQ.data?.diet ?? null;
+  const dietLoading = weekDietQ.isLoading;
   const dietStats = getTodayDietStats(dietSource, activeWeek.start_date);
   const totalDays = activeDays.length;
   const doneDays = activeDays.filter((d) => d.completed_at).length;
