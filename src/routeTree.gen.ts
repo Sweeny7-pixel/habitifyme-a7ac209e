@@ -22,7 +22,9 @@ import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedReviewWeekIdRouteImport } from './routes/_authenticated/review.$weekId'
 import { Route as AuthenticatedDayDayIdRouteImport } from './routes/_authenticated/day.$dayId'
 import { Route as ApiPublicHooksSendWeeklyReviewRouteImport } from './routes/api/public/hooks/send-weekly-review'
+import { Route as ApiPublicHooksSendRecoveryPromptRouteImport } from './routes/api/public/hooks/send-recovery-prompt'
 import { Route as ApiPublicHooksSendDailyReminderRouteImport } from './routes/api/public/hooks/send-daily-reminder'
+import { Route as ApiPublicHooksRecomputeHabitScoresRouteImport } from './routes/api/public/hooks/recompute-habit-scores'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -90,10 +92,22 @@ const ApiPublicHooksSendWeeklyReviewRoute =
     path: '/api/public/hooks/send-weekly-review',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksSendRecoveryPromptRoute =
+  ApiPublicHooksSendRecoveryPromptRouteImport.update({
+    id: '/api/public/hooks/send-recovery-prompt',
+    path: '/api/public/hooks/send-recovery-prompt',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksSendDailyReminderRoute =
   ApiPublicHooksSendDailyReminderRouteImport.update({
     id: '/api/public/hooks/send-daily-reminder',
     path: '/api/public/hooks/send-daily-reminder',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksRecomputeHabitScoresRoute =
+  ApiPublicHooksRecomputeHabitScoresRouteImport.update({
+    id: '/api/public/hooks/recompute-habit-scores',
+    path: '/api/public/hooks/recompute-habit-scores',
     getParentRoute: () => rootRouteImport,
   } as any)
 
@@ -109,7 +123,9 @@ export interface FileRoutesByFullPath {
   '/progress': typeof AuthenticatedProgressRoute
   '/day/$dayId': typeof AuthenticatedDayDayIdRoute
   '/review/$weekId': typeof AuthenticatedReviewWeekIdRoute
+  '/api/public/hooks/recompute-habit-scores': typeof ApiPublicHooksRecomputeHabitScoresRoute
   '/api/public/hooks/send-daily-reminder': typeof ApiPublicHooksSendDailyReminderRoute
+  '/api/public/hooks/send-recovery-prompt': typeof ApiPublicHooksSendRecoveryPromptRoute
   '/api/public/hooks/send-weekly-review': typeof ApiPublicHooksSendWeeklyReviewRoute
 }
 export interface FileRoutesByTo {
@@ -124,7 +140,9 @@ export interface FileRoutesByTo {
   '/progress': typeof AuthenticatedProgressRoute
   '/day/$dayId': typeof AuthenticatedDayDayIdRoute
   '/review/$weekId': typeof AuthenticatedReviewWeekIdRoute
+  '/api/public/hooks/recompute-habit-scores': typeof ApiPublicHooksRecomputeHabitScoresRoute
   '/api/public/hooks/send-daily-reminder': typeof ApiPublicHooksSendDailyReminderRoute
+  '/api/public/hooks/send-recovery-prompt': typeof ApiPublicHooksSendRecoveryPromptRoute
   '/api/public/hooks/send-weekly-review': typeof ApiPublicHooksSendWeeklyReviewRoute
 }
 export interface FileRoutesById {
@@ -141,7 +159,9 @@ export interface FileRoutesById {
   '/_authenticated/progress': typeof AuthenticatedProgressRoute
   '/_authenticated/day/$dayId': typeof AuthenticatedDayDayIdRoute
   '/_authenticated/review/$weekId': typeof AuthenticatedReviewWeekIdRoute
+  '/api/public/hooks/recompute-habit-scores': typeof ApiPublicHooksRecomputeHabitScoresRoute
   '/api/public/hooks/send-daily-reminder': typeof ApiPublicHooksSendDailyReminderRoute
+  '/api/public/hooks/send-recovery-prompt': typeof ApiPublicHooksSendRecoveryPromptRoute
   '/api/public/hooks/send-weekly-review': typeof ApiPublicHooksSendWeeklyReviewRoute
 }
 export interface FileRouteTypes {
@@ -158,7 +178,9 @@ export interface FileRouteTypes {
     | '/progress'
     | '/day/$dayId'
     | '/review/$weekId'
+    | '/api/public/hooks/recompute-habit-scores'
     | '/api/public/hooks/send-daily-reminder'
+    | '/api/public/hooks/send-recovery-prompt'
     | '/api/public/hooks/send-weekly-review'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -173,7 +195,9 @@ export interface FileRouteTypes {
     | '/progress'
     | '/day/$dayId'
     | '/review/$weekId'
+    | '/api/public/hooks/recompute-habit-scores'
     | '/api/public/hooks/send-daily-reminder'
+    | '/api/public/hooks/send-recovery-prompt'
     | '/api/public/hooks/send-weekly-review'
   id:
     | '__root__'
@@ -189,7 +213,9 @@ export interface FileRouteTypes {
     | '/_authenticated/progress'
     | '/_authenticated/day/$dayId'
     | '/_authenticated/review/$weekId'
+    | '/api/public/hooks/recompute-habit-scores'
     | '/api/public/hooks/send-daily-reminder'
+    | '/api/public/hooks/send-recovery-prompt'
     | '/api/public/hooks/send-weekly-review'
   fileRoutesById: FileRoutesById
 }
@@ -198,7 +224,9 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  ApiPublicHooksRecomputeHabitScoresRoute: typeof ApiPublicHooksRecomputeHabitScoresRoute
   ApiPublicHooksSendDailyReminderRoute: typeof ApiPublicHooksSendDailyReminderRoute
+  ApiPublicHooksSendRecoveryPromptRoute: typeof ApiPublicHooksSendRecoveryPromptRoute
   ApiPublicHooksSendWeeklyReviewRoute: typeof ApiPublicHooksSendWeeklyReviewRoute
 }
 
@@ -295,11 +323,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksSendWeeklyReviewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/send-recovery-prompt': {
+      id: '/api/public/hooks/send-recovery-prompt'
+      path: '/api/public/hooks/send-recovery-prompt'
+      fullPath: '/api/public/hooks/send-recovery-prompt'
+      preLoaderRoute: typeof ApiPublicHooksSendRecoveryPromptRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/send-daily-reminder': {
       id: '/api/public/hooks/send-daily-reminder'
       path: '/api/public/hooks/send-daily-reminder'
       fullPath: '/api/public/hooks/send-daily-reminder'
       preLoaderRoute: typeof ApiPublicHooksSendDailyReminderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/recompute-habit-scores': {
+      id: '/api/public/hooks/recompute-habit-scores'
+      path: '/api/public/hooks/recompute-habit-scores'
+      fullPath: '/api/public/hooks/recompute-habit-scores'
+      preLoaderRoute: typeof ApiPublicHooksRecomputeHabitScoresRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -335,19 +377,12 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  ApiPublicHooksRecomputeHabitScoresRoute:
+    ApiPublicHooksRecomputeHabitScoresRoute,
   ApiPublicHooksSendDailyReminderRoute: ApiPublicHooksSendDailyReminderRoute,
+  ApiPublicHooksSendRecoveryPromptRoute: ApiPublicHooksSendRecoveryPromptRoute,
   ApiPublicHooksSendWeeklyReviewRoute: ApiPublicHooksSendWeeklyReviewRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
