@@ -1382,8 +1382,8 @@ export const getWeekDiet = createServerFn({ method: "POST" })
     const { data: days } = await supabase
       .from("workout_days").select("title, focus, day_index")
       .eq("week_id", week.id).order("day_index");
-    const workoutDays = (days ?? []).map((d) => `${d.title} (${d.focus})`);
-    const restDayCount = Math.max(0, 7 - workoutDays.length);
+    const workoutDayIndices = (days ?? []).map((d) => d.day_index);
+    const workoutDayTitles = (days ?? []).map((d) => `${d.title} (${d.focus})`);
 
     const diet = await callGeminiForSevenDayDiet({
       profile: {
@@ -1394,8 +1394,9 @@ export const getWeekDiet = createServerFn({ method: "POST" })
         gender: profile.gender,
         allergies: normalizeAllergies(profile.allergies),
       },
-      workoutDays,
-      restDayCount,
+      workoutDayIndices,
+      workoutDayTitles,
+      weekStartDateIso: week.start_date ?? validateStartDate(undefined),
     });
 
     const { error: uErr } = await supabase
