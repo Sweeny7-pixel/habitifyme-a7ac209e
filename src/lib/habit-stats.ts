@@ -6,6 +6,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { getTotalXPInternal, getLevelProgress, getLevelTitle } from "./xp";
 import { getHabitSegment } from "./habit-score";
+import { getStreakInternal } from "./streak";
 
 export const getHomeHabitStats = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
