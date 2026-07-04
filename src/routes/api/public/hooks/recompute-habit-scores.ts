@@ -8,11 +8,14 @@ export const Route = createFileRoute("/api/public/hooks/recompute-habit-scores")
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const apiKey = request.headers.get("apikey");
-        const expected = process.env.SUPABASE_PUBLISHABLE_KEY;
-        if (!expected || apiKey !== expected) {
+        const provided = request.headers.get("x-cron-secret");
+        const expected = process.env.CRON_HOOK_SECRET;
+        if (!expected || !provided || provided.length !== expected.length) {
           return new Response("Unauthorized", { status: 401 });
         }
+        let diff = 0;
+        for (let i = 0; i < expected.length; i++) diff |= provided.charCodeAt(i) ^ expected.charCodeAt(i);
+        if (diff !== 0) return new Response("Unauthorized", { status: 401 });
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { calculateHabitScoreInternal } = await import("@/lib/habit-score");
