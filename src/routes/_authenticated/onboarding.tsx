@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { saveProfile, generateWeekPlan, getProfile } from "@/lib/gym.functions";
+import { StartDateModal } from "@/components/StartDateModal";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
