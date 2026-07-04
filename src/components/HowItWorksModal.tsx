@@ -1,3 +1,4 @@
+import type { ReactNode, CSSProperties } from "react";
 import { useEffect, useState } from "react";
 import {
   X,
@@ -452,7 +453,7 @@ function PrdSection({
   title: string;
   accent: Accent;
   defaultOpen?: boolean;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   const [open, setOpen] = useState(defaultOpen);
   const color = ACCENT_VAR[accent];
@@ -511,7 +512,7 @@ function PrdBlock({
   children,
 }: {
   label: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <div style={{ marginBottom: 10 }}>
@@ -552,7 +553,7 @@ function SubCard({
 }: {
   title: string;
   accent: Accent;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   const color = ACCENT_VAR[accent];
   return (
@@ -873,7 +874,7 @@ function WireframeCard({
   title: string;
   route: string;
   legend: string[];
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <div className="flex flex-col items-center gap-3">
@@ -931,7 +932,7 @@ function Callout({
   y?: number;
   inline?: boolean;
 }) {
-  const style: React.CSSProperties = inline
+  const style: CSSProperties = inline
     ? { position: "relative" }
     : { position: "absolute", left: x, top: y, zIndex: 5 };
   return (
