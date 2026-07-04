@@ -1245,7 +1245,9 @@ const MealSchema = z.object({
 });
 
 const DietDaySchema = z.object({
-  day: z.enum(["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]),
+  // Display label only ("Sat", "Mon", "Day 1"…). Not used for scheduling —
+  // index into `days` is the source of truth relative to the week's start_date.
+  day: z.string().optional(),
   isWorkoutDay: z.boolean(),
   meals: z.object({
     breakfast: MealSchema,
