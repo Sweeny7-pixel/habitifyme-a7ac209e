@@ -612,12 +612,16 @@ function SelectedDayPanel({
               if (!meal) return null;
               const label = k === "eveningSnack" ? "Snack" : k[0].toUpperCase() + k.slice(1);
               return (
-                <div key={k} className="flex items-center justify-between gap-2 py-2">
-                  <div className="min-w-0">
+                <div key={k} className="flex items-start justify-between gap-2 py-2">
+                  <div className="min-w-0 flex-1">
                     <div className="text-[12px] font-bold text-[var(--text-primary)]">{label}</div>
-                    <div className="text-[11px] text-[var(--text-secondary)] truncate">{meal.items.slice(0, 3).join(", ")}</div>
+                    <ul className="mt-1 space-y-0.5">
+                      {meal.items.map((it, i) => (
+                        <li key={i} className="text-[11px] text-[var(--text-secondary)] leading-snug">• {it}</li>
+                      ))}
+                    </ul>
                   </div>
-                  <span className="kcal-pill">~{meal.approxCalories}</span>
+                  <span className="kcal-pill shrink-0">~{meal.approxCalories}</span>
                 </div>
               );
             })}
