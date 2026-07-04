@@ -42,7 +42,7 @@ function Onboarding() {
   const generate = useServerFn(generateWeekPlan);
   const getMe = useServerFn(getProfile);
   const [submitting, setSubmitting] = useState(false);
-  const [stage, setStage] = useState<"form" | "generating">("form");
+  const [stage, setStage] = useState<"form" | "picking" | "generating">("form");
 
   // If user already has a profile, send them home.
   const existingQ = useQuery({ queryKey: ["profile"], queryFn: () => getMe() });
@@ -68,18 +68,27 @@ function Onboarding() {
     setSubmitting(true);
     try {
       await save({ data: form });
-      // Skip regeneration if already onboarded with a week
       const existing = await getMe();
       if (!existing) throw new Error("Profile save failed");
-      setStage("generating");
-      await generate({ data: { weekNumber: 1 } });
+      // Ask the user when they want Day 1 to start before firing generation.
+      setStage("picking");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed";
+      toast.error(msg);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleStartDateConfirm(startDate: string) {
+    setStage("generating");
+    try {
+      await generate({ data: { weekNumber: 1, startDate } });
       navigate({ to: "/home" });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed";
       toast.error(msg);
-      setStage("form");
-    } finally {
-      setSubmitting(false);
+      setStage("picking");
     }
   }
 
