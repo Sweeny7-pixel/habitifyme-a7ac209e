@@ -1,61 +1,64 @@
-## Part A — "Home page not loading" (diagnose blank screen)
+# Phases 16 + 3 + 20 — implementation plan
 
-**What I already verified**
-- `GET /` and `/home` both return HTTP 200 on preview and on `habitifyme.lovable.app`.
-- Landing (`/`) renders correctly in your preview right now (headline + "Sign in" visible, no Vite error overlay).
-- Dev-server logs show only harmless `inputValidator` deprecation warnings — no runtime errors.
+## Phase 20 — validator migration (mechanical)
+Rename `.inputValidator(` → `.validator(` at the 10 call sites in `src/lib/gym.functions.ts` (lines 66, 100, 193, 337, 350, 417, 441, 515, 1043, 1271). Zero behaviour change; clears the 10 Vite deprecation warnings.
 
-**Most likely cause**
-`/home` lives under `src/routes/_authenticated/home.tsx`. When you're not signed in, the `_authenticated` gate redirects to `/auth`. If the redirect handler or the home loader throws during SSR (e.g. `getHomeHabitStats` calling `requireSupabaseAuth` in the loader without a session), the SSR normalizer in `src/server.ts` can serve a blank/error shell.
+## Phase 16 — diet XP (once per day, idempotent)
 
-**Investigation steps (no code changes yet)**
-1. Open the preview at `/home` in an incognito/logged-out tab and capture: final URL, DOM text, console errors, network 401/500s.
-2. Sign in and repeat — confirm whether blank happens only for one state.
-3. Read `src/routes/_authenticated/home.tsx` and `src/routes/_authenticated/route.tsx` to check whether the loader calls a `requireSupabaseAuth` server function during SSR (per `auth-protected-server-functions` rule, that would 401 the prerender).
-4. Grep for any home-page loader that awaits `getHomeHabitStats` or similar without moving it to `useQuery` in the component.
+**No diet-logging UI exists today** — `getWeekDiet` only fetches the plan. To wire `XP_RULES.DIET_LOGGING = 15` I need a user action to award against. Adding the minimum surface:
 
-**Fix (if the diagnosis holds)**
-- Move any protected server-fn call out of the `home` route `loader` and into the component via `useServerFn` + `useSuspenseQuery`, OR
-- Ensure `home.tsx` only relies on the managed `_authenticated` gate and does no SSR-time protected reads.
+**New server fn** `logDietDay` in `src/lib/checkin.ts` (co-located with `gymCheckin` for symmetry):
+- `.middleware([requireSupabaseAuth])`
+- input: `{ weekId: uuid, dayIndex: 0..6 }`
+- computes date string in Asia/Kolkata timezone → `yyyy-mm-dd`
+- calls `awardXPInternal(supabase, userId, "DIET_LOGGING", 15, { source: "diet_log", idempotencyKey: "diet:<userId>:<yyyy-mm-dd>" })`
+- returns `{ xpAwarded, alreadyLogged }`
 
-I'll only apply a code fix after step 1–3 confirm which failure mode you hit.
+Idempotency: `awardXPInternal` already keys on `xp_transactions.idempotency_key` (unique per user); a second call the same day returns `{ alreadyLogged: true, xpAwarded: 0 }`.
 
----
+**UI wire** in `src/routes/_authenticated/diet.tsx`:
+- New "Mark diet followed" pill button below the day badge, only when `isToday`.
+- On click → `logDietDay` → toast `+15 XP` (via existing `XpPopup`) or "Already logged today".
+- After success, invalidate `["homeStats"]` and `["xp"]`.
+- Local `useQuery` `["dietLogged", todayISO]` reads today's log state so the button flips to "Logged today ✓" without a page refresh.
 
-## Part B — Full 20-phase audit
+**Where does the "log" state come from?** Reuse the `xp_transactions` row itself: add a small helper `hasDietLogToday(supabase, userId)` (SELECT 1 FROM xp_transactions WHERE reason='DIET_LOGGING' AND idempotency_key='diet:…:<today>' LIMIT 1). No new table.
 
-I'll grep the codebase for the deliverables listed in `attached_assets/Pasted-Below-…txt` (Phases 1–20) and produce a compact status table with:
+## Phase 3 — real streak service
 
-| Phase | Title | Key files expected | Status | Gap |
+**Approach:** derive from existing `workout_days.completed_at` — no schema change.
 
-The audit checks — not a rewrite:
-1. **Phase 1** — read-only review baseline.
-2. **Phase 2** — XP engine (`src/lib/xp.ts`, `xp_transactions` table, `awardXP`).
-3. **Phase 3** — Streak engine (streak table, streak calc).
-4. **Phase 4** — Daily check-in (`checkins` table, check-in UI).
-5. **Phase 5** — Home dashboard (Habit Score, XP bar, weekly graph, achievements panel in `home.tsx`).
-6. **Phase 6** — Habit Score (`src/lib/habit-score.ts`, `habit_scores` table).
-7. **Phase 7** — Trigger engine (onboarding time/day/tz + 30m/missed/3d/7d/14d schedules).
-8. **Phase 8** — Reward loops (XP popups, level titles, celebration UI).
-9. **Phase 9** — Investment (Sunday planning modal, weekly review).
-10. **Phase 10** — Achievements engine (`src/lib/achievements.ts`, `achievements` table).
-11. **Phase 11** — Recovery flow (`RecoveryModal`, gap detector, `GapChoiceModal`).
-12. **Phase 12** — Push notifications (VAPID, `push_subscriptions`, `push-sw.js`, `sendPush`).
-13. **Phase 13** — Level system + titles.
-14. **Phase 14** — Weekly review v2.
-15. **Phase 15** — Progress dashboard.
-16. **Phase 16** — Diet integration into habit loop.
-17. **Phase 17** — Server jobs (daily reminder, weekly review, recompute scores, recovery prompt) + `pg_cron` schedules.
-18. **Phase 18** — Refactors / consolidation (single XP module, no duplicate migrations).
-19. **Phase 19** — Analytics events.
-20. **Phase 20** — Polish / QA pass.
+**New module** `src/lib/streak.ts`:
+- `getStreakInternal(supabase, userId): Promise<{ current: number, longest: number, lastCompletedAt: string | null }>`
+- Query: `SELECT date_trunc('day', completed_at AT TIME ZONE 'Asia/Kolkata') AS d FROM workout_days WHERE user_id = $1 AND completed_at IS NOT NULL ORDER BY d DESC` (via `.select().order()`).
+- In JS: dedupe by day, walk down from today (or yesterday if no workout today) counting consecutive days for `current`; single pass for `longest`.
+- Cap query to last 365 rows to keep it cheap.
 
-**Deliverable**: one status table posted in chat + a short bullet list of concrete gaps to close, ordered by user impact. No code edits in this pass.
+**Expose** in `getHomeHabitStats` (`src/lib/habit-stats.ts`):
+- Add `getStreakInternal(supabase, userId)` to the `Promise.all([...])`.
+- Add `currentStreak`, `longestStreak`, `lastWorkoutAt` to the returned DTO.
 
----
+**Render on Home** (`src/routes/_authenticated/home.tsx`):
+- Replace the current "streak = doneDays this week" card with `currentStreak` from `homeStats`.
+- Sub-text: "Longest: {longestStreak} days" and "Last workout: {relativeTime(lastWorkoutAt)}".
+- If `currentStreak === 0`, show "Start your streak — do today's workout".
 
-## Order of work
+## Order of execution
+1. Phase 20 rename (one file, ~10 line edits) — ship first, warnings gone.
+2. Phase 3 streak service + Home wire — no DB migration, pure additive.
+3. Phase 16 diet XP — new server fn + one button in `diet.tsx`.
 
-1. Diagnose the blank-screen (Part A) — quick, unblocks you.
-2. Post the 20-phase audit table (Part B) — read-only.
-3. You pick which gap(s) to close next; I plan those as separate turns.
+## Not doing / not needed
+- No new tables — both features derive from existing rows.
+- No migration — nothing schema-level.
+- No changes to `xp.ts` scoring rules or `XP_RULES` values.
+- No changes to cron/auth/edge-function surfaces.
+- No streak column on `profiles` — keeping it derived avoids drift with `workout_days`.
+
+## Files touched
+- `src/lib/gym.functions.ts` — 10 renames
+- `src/lib/streak.ts` — new
+- `src/lib/habit-stats.ts` — add streak fields to DTO
+- `src/routes/_authenticated/home.tsx` — render current/longest streak
+- `src/lib/checkin.ts` — add `logDietDay` + `hasDietLogToday`
+- `src/routes/_authenticated/diet.tsx` — "Mark diet followed" button + state
