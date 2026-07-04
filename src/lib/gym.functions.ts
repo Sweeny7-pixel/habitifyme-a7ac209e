@@ -1272,8 +1272,9 @@ function isSevenDayDiet(value: unknown): value is SevenDayDiet {
 
 async function callGeminiForSevenDayDiet(input: {
   profile: Record<string, unknown>;
-  workoutDays: string[];
-  restDayCount: number;
+  workoutDayIndices: number[]; // 1..7 within the week
+  workoutDayTitles: string[];
+  weekStartDateIso: string;
 }): Promise<SevenDayDiet> {
   const { generateText } = await import("ai");
   const { createGeminiProvider } = await import("./ai-gateway.server");
@@ -1281,14 +1282,24 @@ async function callGeminiForSevenDayDiet(input: {
 
   const system = `You are a certified Indian sports nutritionist. You design simple, budget-friendly Indian diet plans for beginner gym-goers. Never give medical advice.`;
 
+  const dates = buildDatesForWeek(input.weekStartDateIso, 7);
+  const scheduleLine = dates
+    .map((d) => {
+      const isWorkout = input.workoutDayIndices.includes(d.day_index);
+      return `Day ${d.day_index} (${d.date_iso}, ${d.weekday})${isWorkout ? " = WORKOUT" : " = REST"}`;
+    })
+    .join(", ");
+  const totalWorkoutDays = input.workoutDayIndices.length;
+
   const prompt = `Generate a 7-day diet plan for the following user.
 
 User profile:
 - Goal: ${input.profile.goal}
 - Weight: ${input.profile.weight_kg}kg, Height: ${input.profile.height_cm}cm, Age: ${input.profile.age}
 - Gender: ${input.profile.gender}
-- Workout sessions this week (${input.workoutDays.length}): ${input.workoutDays.join(", ") || "none"}
-- Rest days this week: ${input.restDayCount}
+- Week starts on ${shortDateLabel(input.weekStartDateIso)}
+- Schedule: ${scheduleLine}
+- Workout sessions this week (${totalWorkoutDays}): ${input.workoutDayTitles.join(", ") || "none"}
 - Allergies / foods to avoid: ${normalizeAllergies(input.profile.allergies as string | null | undefined) || "none"}
 
 STRICT RULES:
@@ -1300,13 +1311,13 @@ STRICT RULES:
 6. Budget-friendly. No expensive ingredients.
 7. Goal = weight loss → slight caloric deficit. Goal = muscle gain → slight caloric surplus.
 8. Respect allergies — NEVER include them in any meal; substitute safely.
-9. Spread the user's workout sessions across the week (Mon..Sun) sensibly; mark each day's isWorkoutDay accordingly. Exactly ${input.workoutDays.length} days must have isWorkoutDay=true.
+9. The 7 entries in the "days" array MUST be in order Day 1..Day 7 (matching the Schedule above). Mark each day's isWorkoutDay to match. Exactly ${totalWorkoutDays} entries must have isWorkoutDay=true.
 
 Return ONLY valid JSON (no markdown, no backticks) matching:
 {
   "days": [
     {
-      "day": "Monday" | ... | "Sunday",
+      "day": string,            // display label such as "Sat" or "Day 1"
       "isWorkoutDay": boolean,
       "meals": {
         "breakfast":    { "items": [string, ...], "approxCalories": number },
@@ -1318,8 +1329,7 @@ Return ONLY valid JSON (no markdown, no backticks) matching:
       "proteinNote": string
     }
   ]
-}
-The "days" array MUST have exactly 7 entries in order Monday..Sunday.`;
+}`;
 
   let text: string;
   try {
