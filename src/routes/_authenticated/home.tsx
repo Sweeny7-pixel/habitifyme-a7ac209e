@@ -12,6 +12,8 @@ import { gymCheckin } from "@/lib/checkin";
 import { awardSundayPlanningXP } from "@/lib/xp";
 import { getHomeHabitStats } from "@/lib/habit-stats";
 import { ACHIEVEMENT_MAP } from "@/lib/achievements";
+import { dietIndexForToday, shortDateLabel } from "@/lib/plan-dates";
+import { StartDateModal } from "@/components/StartDateModal";
 import {
   CheckCircle2,
   Circle,
