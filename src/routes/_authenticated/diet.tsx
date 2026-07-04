@@ -102,7 +102,7 @@ function DietPage() {
   );
 }
 
-function WeekDietView({ weekId }: { weekId: string }) {
+function WeekDietView({ weekId, startDate }: { weekId: string; startDate: string | null }) {
   const qc = useQueryClient();
   const getDietFn = useServerFn(getWeekDiet);
   const logDietFn = useServerFn(logDietDay);
@@ -128,7 +128,30 @@ function WeekDietView({ weekId }: { weekId: string }) {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const [dayIdx, setDayIdx] = useState<number>(() => todayIndex());
+  // Compute the "today" position within this week's diet (0..6). When the week
+  // has not started yet → day 0; already ended → day 6. Falls back to zero when
+  // we have no start_date.
+  const todayIdx = useMemo(() => dietIndexForToday(startDate ?? null), [startDate]);
+
+  // Rolling-week weekday labels — always derived from the week's real dates,
+  // never a hardcoded Mon..Sun list.
+  const dayLabels = useMemo(() => {
+    if (!startDate) {
+      // Legacy weeks with no start_date: fall back to today-first labels so the
+      // strip still shows something readable.
+      const anchor = todayIstIso();
+      return Array.from({ length: 7 }, (_, i) => ({
+        short: weekdayShort(addDaysIso(anchor, i)),
+        long: weekdayLong(addDaysIso(anchor, i)),
+      }));
+    }
+    return Array.from({ length: 7 }, (_, i) => {
+      const iso = addDaysIso(startDate, i);
+      return { short: weekdayShort(iso), long: weekdayLong(iso) };
+    });
+  }, [startDate]);
+
+  const [dayIdx, setDayIdx] = useState<number>(todayIdx);
 
   // Only block on the first fetch — background refetches keep the UI visible.
   if (dietQ.isLoading) return <CenterSpinner label="Loading your diet plan…" />;
@@ -150,7 +173,7 @@ function WeekDietView({ weekId }: { weekId: string }) {
       <div className="glass-card">
         <p className="font-bold text-[var(--text-primary)]">Upgrade to the new 7-day plan?</p>
         <p className="mt-1 text-sm text-[var(--text-secondary)]">
-          Your old plan was a single daily target. The new plan gives you Mon–Sun meals tuned for workout vs rest days.
+          Your old plan was a single daily target. The new plan gives you a full 7-day rolling menu tuned for workout vs rest days.
         </p>
         <button
           onClick={async () => {
@@ -166,28 +189,29 @@ function WeekDietView({ weekId }: { weekId: string }) {
   }
 
   const day = diet.days[dayIdx];
-  const isToday = dayIdx === todayIndex();
+  const isToday = dayIdx === todayIdx;
   const KCAL_TARGET = 2500;
   const kcalPct = Math.min(1, day.totalApproxCalories / KCAL_TARGET);
   const proteinG = Math.round((day.totalApproxCalories * 0.30) / 4);
   const carbsG = Math.round((day.totalApproxCalories * 0.45) / 4);
   const fatG = Math.round((day.totalApproxCalories * 0.25) / 9);
+  const dayLabel = dayLabels[dayIdx]?.long ?? day.day ?? `Day ${dayIdx + 1}`;
 
   return (
     <div className="space-y-4">
       {/* Day strip */}
       <div className="grid grid-cols-7 gap-1.5">
-        {DAY_SHORT.map((label, i) => {
+        {dayLabels.map(({ short }, i) => {
           const active = i === dayIdx;
           const isWorkout = diet.days[i]?.isWorkoutDay;
           return (
             <button
-              key={label}
+              key={i}
               onClick={() => setDayIdx(i)}
               className={`glass-day-btn ${active ? "glass-day-btn-active" : ""}`}
             >
               <div className={`text-[9px] font-bold uppercase tracking-wider ${active ? "text-[var(--neon-orange)]" : "text-[var(--text-muted)]"}`}>
-                {label}
+                {short}
               </div>
               <span
                 className="glass-macro-dot mt-1"
@@ -206,8 +230,9 @@ function WeekDietView({ weekId }: { weekId: string }) {
           <span className="glass-pill"><Moon className="h-3 w-3" /> Rest day</span>
         )}
         {isToday && <span className="glass-pill">Today</span>}
-        <span className="ml-auto text-[11px] font-semibold text-[var(--text-secondary)]">{day.day}</span>
+        <span className="ml-auto text-[11px] font-semibold text-[var(--text-secondary)]">{dayLabel}</span>
       </div>
+
 
       {/* Mark diet followed (today only) */}
       {isToday && (
