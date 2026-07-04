@@ -499,7 +499,7 @@ function NotificationsSection() {
       <div className="glass-card p-3 space-y-2.5">
         <div className="flex items-center justify-between">
           <div className="text-xs text-[var(--text-secondary)]">
-            Daily 5am · Sunday 9pm · Achievements
+            Daily 5am · End-of-week 9pm · Achievements
           </div>
           <span
             className="text-[10px] font-extrabold uppercase tracking-wider"
