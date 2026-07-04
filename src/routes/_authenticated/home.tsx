@@ -157,33 +157,42 @@ function HomePage() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [promptOpen, setPromptOpen] = useState(false);
   const [customPrompt, setCustomPrompt] = useState("");
+  // Two-step regenerate: confirm → pick start date → generate.
+  const [startPickerFor, setStartPickerFor] = useState<null | { kind: "regenerate" } | { kind: "prompt"; prompt: string }>(null);
 
   const generate = useMutation({
-    mutationFn: async () => generateFn(),
+    mutationFn: async (startDate: string) => generateFn({ data: { startDate } }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["planWeeks"] });
       qc.invalidateQueries({ queryKey: ["currentWeek"] });
       setSelectedWeekNum(null);
       setConfirmOpen(false);
+      setStartPickerFor(null);
       toast.success("Your 4-week plan is ready!");
     },
     onError: (e: Error) => {
       setConfirmOpen(false);
+      setStartPickerFor(null);
       toast.error(e.message);
     },
   });
 
   const generateFromPrompt = useMutation({
-    mutationFn: async (prompt: string) => generatePromptFn({ data: { prompt } }),
+    mutationFn: async ({ prompt, startDate }: { prompt: string; startDate: string }) =>
+      generatePromptFn({ data: { prompt, startDate } }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["planWeeks"] });
       qc.invalidateQueries({ queryKey: ["currentWeek"] });
       setSelectedWeekNum(null);
       setPromptOpen(false);
       setCustomPrompt("");
+      setStartPickerFor(null);
       toast.success("Custom plan generated!");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => {
+      setStartPickerFor(null);
+      toast.error(e.message);
+    },
   });
 
   const checkinMutation = useMutation({
