@@ -14,6 +14,75 @@ export type Database = {
   }
   public: {
     Tables: {
+      achievements: {
+        Row: {
+          achievement_key: string
+          id: string
+          metadata: Json
+          unlocked_at: string
+          user_id: string
+        }
+        Insert: {
+          achievement_key: string
+          id?: string
+          metadata?: Json
+          unlocked_at?: string
+          user_id: string
+        }
+        Update: {
+          achievement_key?: string
+          id?: string
+          metadata?: Json
+          unlocked_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      analytics_events: {
+        Row: {
+          created_at: string
+          event_name: string
+          id: string
+          properties: Json
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_name: string
+          id?: string
+          properties?: Json
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_name?: string
+          id?: string
+          properties?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
+      checkins: {
+        Row: {
+          created_at: string
+          id: string
+          location: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          location?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          location?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       exercise_logs: {
         Row: {
           exercise_index: number
@@ -66,6 +135,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      habit_score_history: {
+        Row: {
+          calculated_at: string
+          id: string
+          score: number
+          user_id: string
+        }
+        Insert: {
+          calculated_at?: string
+          id?: string
+          score: number
+          user_id: string
+        }
+        Update: {
+          calculated_at?: string
+          id?: string
+          score?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      habit_scores: {
+        Row: {
+          calculated_at: string
+          score: number
+          score_30d: number
+          score_7d: number
+          user_id: string
+        }
+        Insert: {
+          calculated_at?: string
+          score?: number
+          score_30d?: number
+          score_7d?: number
+          user_id: string
+        }
+        Update: {
+          calculated_at?: string
+          score?: number
+          score_30d?: number
+          score_7d?: number
+          user_id?: string
+        }
+        Relationships: []
       }
       notified_achievements: {
         Row: {
