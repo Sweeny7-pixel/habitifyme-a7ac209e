@@ -1270,7 +1270,7 @@ export const generatePlanFromPrompt = createServerFn({ method: "POST" })
     const { error: dErr } = await supabase.from("workout_days").insert(daysRows);
     if (dErr) throw new Error(dErr.message);
 
-    return { ok: true, weekId: wRow.id, days: validDays.length };
+    return { ok: true, weekId: wRow.id, days: reindexedValidDays.length };
   });
 
 // ============ 7-day Indian diet plan ============
