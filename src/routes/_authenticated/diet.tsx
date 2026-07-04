@@ -92,7 +92,12 @@ function DietPage() {
         })}
       </div>
 
-      {weekId && <WeekDietView weekId={weekId} />}
+      {weekId && (
+        <WeekDietView
+          weekId={weekId}
+          startDate={weeks.find((w) => w.id === weekId)?.start_date ?? null}
+        />
+      )}
     </div>
   );
 }
