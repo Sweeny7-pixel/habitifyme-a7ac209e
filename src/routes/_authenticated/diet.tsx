@@ -4,6 +4,7 @@ import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { getWeekDiet, getAllWeeks } from "@/lib/gym.functions";
 import { logDietDay, getTodayDietLog } from "@/lib/checkin";
+import { addDaysIso, dietIndexForToday, weekdayShort, weekdayLong, todayIstIso } from "@/lib/plan-dates";
 import { Utensils, Flame, Loader2, Dumbbell, Moon, RefreshCw, Coffee, Soup, Apple, ChefHat, AlertTriangle, CheckCircle2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
@@ -17,13 +18,9 @@ export const Route = createFileRoute("/_authenticated/diet")({
   component: DietPage,
 });
 
-const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"] as const;
-const DAY_SHORT = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-type DayName = (typeof DAYS)[number];
-
 type Meal = { items: string[]; approxCalories: number };
 type DietDay = {
-  day: DayName;
+  day?: string;
   isWorkoutDay: boolean;
   meals: { breakfast: Meal; lunch: Meal; eveningSnack: Meal; dinner: Meal };
   totalApproxCalories: number;
@@ -36,10 +33,6 @@ function isSevenDayDiet(value: unknown): value is SevenDayDiet {
   return !!v && Array.isArray(v.days) && v.days.length === 7 && !!(v.days[0] as DietDay)?.meals;
 }
 
-function todayIndex() {
-  const js = new Date().getDay();
-  return (js + 6) % 7;
-}
 
 function DietPage() {
   const getAllWeeksFn = useServerFn(getAllWeeks);
