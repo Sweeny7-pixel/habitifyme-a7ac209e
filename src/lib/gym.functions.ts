@@ -3,6 +3,30 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Json } from "@/integrations/supabase/types";
 import { z } from "zod";
 import { awardXPInternal, XP_RULES } from "./xp";
+import {
+  addDaysIso,
+  shortDateLabel,
+  validateStartDate,
+  weekdayShort,
+} from "./plan-dates";
+
+/** Zod schema for the optional start-date field on every generator. */
+const StartDateInput = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/)
+  .optional();
+
+/** Build the `[{ day_index, date_iso, weekday }]` list for a rolling week. */
+function buildDatesForWeek(startDateIso: string, dayCount: number): {
+  day_index: number;
+  date_iso: string;
+  weekday: string;
+}[] {
+  return Array.from({ length: dayCount }, (_, i) => {
+    const iso = addDaysIso(startDateIso, i);
+    return { day_index: i + 1, date_iso: iso, weekday: weekdayShort(iso) };
+  });
+}
 
 // ============ Schemas ============
 
