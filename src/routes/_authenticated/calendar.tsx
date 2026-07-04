@@ -493,10 +493,12 @@ function SelectedDayPanel({
   date,
   day,
   weekId,
+  weekStartDate,
 }: {
   date: Date;
   day: { id: string; title: string; focus: string | null; exercises_json: unknown; completed_at: string | null } | null;
   weekId: string | null;
+  weekStartDate: string | null;
 }) {
   const getDietFn = useServerFn(getWeekDiet);
   const dietQ = useQuery({
@@ -506,9 +508,19 @@ function SelectedDayPanel({
     retry: 1,
   });
 
-  const dayOfWeek = (date.getDay() + 6) % 7; // 0=Mon
-  const diet = dietQ.data?.diet as { days?: { day: string; isWorkoutDay: boolean; totalApproxCalories: number; meals: Record<string, { items: string[]; approxCalories: number }> }[] } | undefined;
-  const dietForDay = diet?.days?.[dayOfWeek];
+  // Diet is a 7-entry array indexed by position within the week (Day 1..7),
+  // measured from the week's own start_date. Falls back to Monday-anchored
+  // index for legacy weeks with no start_date.
+  const dayOffset = useMemo(() => {
+    if (weekStartDate) {
+      const start = parseDbDate(weekStartDate);
+      const diff = Math.round((date.getTime() - start.getTime()) / 86_400_000);
+      return Math.max(0, Math.min(6, diff));
+    }
+    return (date.getDay() + 6) % 7;
+  }, [date, weekStartDate]);
+  const diet = dietQ.data?.diet as { days?: { day?: string; isWorkoutDay: boolean; totalApproxCalories: number; meals: Record<string, { items: string[]; approxCalories: number }> }[] } | undefined;
+  const dietForDay = diet?.days?.[dayOffset];
 
   const dateLabel = date.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
 
