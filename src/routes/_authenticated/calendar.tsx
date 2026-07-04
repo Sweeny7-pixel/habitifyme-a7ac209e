@@ -87,14 +87,14 @@ function CalendarPage() {
   const totalWeeks = weeks.length;
   const currentViewWeek = weeks.find((w) => w.week_number === viewWeekNum) ?? null;
 
-  // Rolling-week model: each workout day carries its own `workout_date`
-  // (set at generation time). We still keep a per-week "Monday of week"
-  // anchor for the week strip UI, derived from `weeks.start_date`.
+  // Rolling-week model: each week's strip is anchored to its own start_date
+  // (Day 1 of the plan) — not the ISO Monday. Legacy weeks without a
+  // start_date fall back to today so they still render.
   const weekStartMap = useMemo(() => {
-    const map = new Map<string, ReturnType<typeof startOfWeekMon>>();
+    const map = new Map<string, Date>();
     weeks.forEach((w) => {
       const base = w.start_date ? parseDbDate(w.start_date) : today;
-      map.set(w.id, startOfWeekMon(base));
+      map.set(w.id, base);
     });
     return map;
   }, [weeks, today]);
@@ -134,13 +134,28 @@ function CalendarPage() {
 
   const selectedDay = dateToDay.get(selected.toDateString()) ?? null;
 
-  // Anchor date the week strip should be centred on: the Monday of the
-  // currently-viewed week (falls back to the selected date).
+  // Anchor date the week strip should be built from: Day 1 (start_date) of the
+  // currently-viewed week (falls back to the selected date for legacy weeks).
   const stripAnchor = useMemo(() => {
     if (!currentViewWeek) return selected;
     const start = weekStartMap.get(currentViewWeek.id);
     return start ?? selected;
   }, [currentViewWeek, weekStartMap, selected]);
+
+  // When the viewed week actually contains today, prefer selecting today so the
+  // user lands on the current day instead of Day 1 of the week.
+  useEffect(() => {
+    if (!currentViewWeek) return;
+    const start = weekStartMap.get(currentViewWeek.id);
+    if (!start) return;
+    const end = addDays(start, 7);
+    if (today >= start && today < end) {
+      setSelected((prev) => (prev >= start && prev < end ? prev : today));
+    } else {
+      setSelected((prev) => (prev >= start && prev < end ? prev : start));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentViewWeek?.id]);
 
   if (planQ.isLoading) {
     return (
