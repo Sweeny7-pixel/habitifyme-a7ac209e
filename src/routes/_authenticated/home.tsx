@@ -258,7 +258,6 @@ function HomePage() {
   const totalDays = activeDays.length;
   const doneDays = activeDays.filter((d) => d.completed_at).length;
   const allDone = doneDays === totalDays && totalDays > 0;
-  const streak = doneDays;
   const monthName = new Date().toLocaleString(undefined, { month: "long" });
 
   const stats = habitStatsQ.data;
