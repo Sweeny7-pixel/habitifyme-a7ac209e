@@ -81,13 +81,13 @@ function CalendarPage() {
   const totalWeeks = weeks.length;
   const currentViewWeek = weeks.find((w) => w.week_number === viewWeekNum) ?? null;
 
-  // Map calendar dates → workout day. We assume weeks[0] starts on the Monday
-  // of that week's start_date, and day_index 1..N maps to consecutive days.
-  // If no start_date, fall back to today's week.
+  // Rolling-week model: each workout day carries its own `workout_date`
+  // (set at generation time). We still keep a per-week "Monday of week"
+  // anchor for the week strip UI, derived from `weeks.start_date`.
   const weekStartMap = useMemo(() => {
     const map = new Map<string, ReturnType<typeof startOfWeekMon>>();
     weeks.forEach((w) => {
-      const base = w.start_date ? new Date(w.start_date) : today;
+      const base = w.start_date ? parseDbDate(w.start_date) : today;
       map.set(w.id, startOfWeekMon(base));
     });
     return map;
@@ -96,27 +96,35 @@ function CalendarPage() {
   const dateToDay = useMemo(() => {
     const map = new Map<string, (typeof days)[number]>();
     weeks.forEach((w) => {
-      const start = weekStartMap.get(w.id);
-      if (!start) return;
+      const weekStart = w.start_date ? parseDbDate(w.start_date) : null;
       const wDays = days.filter((d) => d.week_id === w.id).sort((a, b) => a.day_index - b.day_index);
-      wDays.forEach((d, i) => {
-        const dt = addDays(start, i);
+      wDays.forEach((d) => {
+        // Prefer the explicit workout_date (rolling-week rows); fall back to
+        // start_date + (day_index - 1) for legacy rows without workout_date.
+        const dt = d.workout_date
+          ? parseDbDate(d.workout_date)
+          : weekStart
+            ? addDays(weekStart, Math.max(0, d.day_index - 1))
+            : null;
+        if (!dt) return;
         map.set(dt.toDateString(), d);
       });
     });
     return map;
-  }, [weeks, days, weekStartMap]);
+  }, [weeks, days]);
 
-  // Diet preview comes from the week the selected date belongs to.
+  // Diet preview comes from the week the selected date belongs to. We compare
+  // against the actual 7-day window starting at `start_date` rather than the
+  // Monday-anchored strip window.
   const selectedWeek = useMemo(() => {
     for (const w of weeks) {
-      const start = weekStartMap.get(w.id);
-      if (!start) continue;
+      if (!w.start_date) continue;
+      const start = parseDbDate(w.start_date);
       const end = addDays(start, 7);
       if (selected >= start && selected < end) return w;
     }
     return weeks.find((w) => w.status === "active") ?? weeks[0] ?? null;
-  }, [weeks, weekStartMap, selected]);
+  }, [weeks, selected]);
 
   const selectedDay = dateToDay.get(selected.toDateString()) ?? null;
 
