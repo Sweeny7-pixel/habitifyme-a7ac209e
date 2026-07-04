@@ -362,6 +362,31 @@ function PrdTab() {
           ]}
         />
 
+        <SubCard accent="purple" title="Shipped in V3 — Habit Formation Engine">
+          <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 8 }}>
+            Trigger → Action → Reward → Investment → Repeat, layered onto the
+            existing dark-glass UI without a redesign.
+          </p>
+          <BulletList
+            items={[
+              "Quick Check-In — a one-tap button on home records attendance without requiring a full workout log",
+              'Streak card — "0 day streak / start your streak" messaging, reframed around the weekly completion count rather than a punishing global day streak',
+              'XP & Level system — a level card (e.g. "Rookie · Level 1 · 25 XP total") with a progress bar to the next level ("25 / 150 XP to Level 2")',
+              'XP-rules banner on home: "Earn XP: workout +50 · check-in +20 · weekly review +40 · 10% chance of a surprise bonus!"',
+              'Diet logging XP — "Mark diet followed (+15 XP)" button on /diet ties nutrition adherence into the same reward loop as workouts',
+              "Achievements grid on /profile — 12 badges shown locked/greyed until earned (First Workout, 3-Day Streak, 7-Day Streak, Week Complete, 10 Workouts, 1000 XP, Perfect Week, Habit Champion, 4-Week Streak, 80%+ Avg, Review Pro)",
+              'Notification preferences summary with explicit browser-permission detection ("Blocked in browser — re-enable there and refresh")',
+              "Expanded profile stat grid — Weeks Started, Weeks Done, Avg Completion, Reviews Done",
+            ]}
+          />
+          <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 10 }}>
+            Still partial: Habit Score (0–100 nightly composite) is defined but
+            not yet rendered; segmentation-based unlocks, Sunday Planning,
+            the 3/7/14-day Recovery Flow, confirmed surprise-reward confetti,
+            and offline caching remain deferred to V4.
+          </p>
+        </SubCard>
+
         <SubCard accent="green" title="Shipped in V3 — responsive shell fix">
           <BulletList
             items={[
@@ -377,6 +402,12 @@ function PrdTab() {
       <PrdSection letter="E" title="Deferred to V4" accent="purple">
         <BulletList
           items={[
+            "Habit Score calculation engine and dashboard surfacing (0–100 score, trend, rolling 7/30-day windows)",
+            "Automated user segmentation and tier-based feature unlocks (At Risk / Building / Strong Habit / Champion)",
+            "Sunday Planning flow — travel mode, unavailable days, plan regeneration + XP",
+            "Recovery Flow for 3/7/14-day inactivity with reason capture and analytics",
+            "Confirmed surprise-reward animation (confetti, rare badge) tied to the 10% bonus roll",
+            "Offline support — cached workout/diet/plan with local logging and later sync",
             "Per-user timezone for push scheduling (cron currently fans out to all push_subscriptions at fixed UTC offsets aligned to IST)",
             "Social / streak sharing surfaces — no share sheet, OG image, or leaderboard",
             "User-uploaded exercise videos — every exercise still opens a YouTube search link, no upload UI or storage bucket",
@@ -634,6 +665,19 @@ function JourneysTab() {
         { n: 6, title: "Builds trust", action: "Continues following the plan confidently", emotion: "green", emotionLabel: "Trusting", note: "This app actually has my back" },
       ],
     },
+    {
+      title: "Journey 4 — First Check-In → Level Progress (Habit Formation Loop)",
+      persona: "John, Week 1 beginner, first session on a new plan",
+      arc: "Uncertain → Willing → Rewarded → Curious → Invested",
+      steps: [
+        { n: 1, title: "Opens /home Day 1", action: '"0 day streak — start your streak" + Check-in button', emotion: "amber", emotionLabel: "Uncertain", note: "What does this button actually do?" },
+        { n: 2, title: "Taps Check-in", action: "Attendance recorded — no sets required yet", emotion: "green", emotionLabel: "Willing", note: "That was easy, no forms" },
+        { n: 3, title: "Finishes workout", action: 'Sticky "Finish workout" → +50 XP, +20 check-in XP', emotion: "green", emotionLabel: "Rewarded", note: "Wait, I actually earned something" },
+        { n: 4, title: "Marks diet followed", action: '"Mark diet followed (+15 XP)" on /diet', emotion: "green", emotionLabel: "Invested", note: "Might as well log this too" },
+        { n: 5, title: "Opens /profile", action: "Rookie · Level 1 · 17% to Level 2; locked achievements grid", emotion: "amber", emotionLabel: "Curious", note: "What do I need to unlock these?" },
+        { n: 6, title: "Re-enables notifications", action: '"Blocked in browser" warning → fixes it', emotion: "green", emotionLabel: "Invested", note: "Don't want to miss the reminder" },
+      ],
+    },
   ];
 
   return (
@@ -769,9 +813,23 @@ function WireframesTab() {
           "Progress bar is the single most-checked number in the session",
           "Training day list is the primary navigation into the gym",
           "Diet card surfaces nutrition without leaving home",
+          "Streak + Check-in + level card (new) turns the daily Trigger into an immediate, visible Reward",
         ]}
       >
         <HomeWireframe />
+      </WireframeCard>
+
+      <WireframeCard
+        title="Profile & Achievements"
+        route="/profile"
+        legend={[
+          "Habit stat grid (weeks started/done, avg completion, reviews done) summarizes consistency at a glance",
+          "Notification card surfaces browser-blocked reminders explicitly, instead of failing silently",
+          "Level card repeats the home reward signal on a second screen",
+          "Achievements grid stays visible and greyed-out when locked — a visible goal ladder, not a surprise",
+        ]}
+      >
+        <ProfileWireframe />
       </WireframeCard>
 
       <WireframeCard
@@ -910,6 +968,7 @@ function HomeWireframe() {
       <Callout n={4} x={12} y={252} />
       <Callout n={5} x={12} y={330} />
       <Callout n={6} x={12} y={450} />
+      <Callout n={7} x={12} y={165} />
 
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
@@ -945,6 +1004,40 @@ function HomeWireframe() {
           Hey Arjun 👋
         </div>
         <span className="glass-pill mt-1">Week 2 · July</span>
+      </div>
+
+      <div
+        className="mt-3 flex items-center justify-between"
+        style={{ padding: 8, borderRadius: 12, background: "rgba(255,107,53,0.08)", border: "1px solid rgba(255,107,53,0.25)" }}
+      >
+        <div style={{ fontSize: 10, color: "var(--text-primary)", fontWeight: 700 }}>
+          🔥 3 day streak
+        </div>
+        <span
+          style={{
+            padding: "3px 8px",
+            borderRadius: 999,
+            fontSize: 9,
+            fontWeight: 800,
+            background: "var(--neon-orange)",
+            color: "#fff",
+          }}
+        >
+          Check-in
+        </span>
+      </div>
+
+      <div
+        className="mt-1.5"
+        style={{ padding: 8, borderRadius: 12, background: "var(--glass-2)", border: "1px solid var(--glass-border)" }}
+      >
+        <div className="flex items-center justify-between" style={{ fontSize: 10 }}>
+          <span style={{ color: "var(--text-primary)", fontWeight: 700 }}>Rookie · Lv 1</span>
+          <span style={{ color: "var(--neon-purple)", fontWeight: 700 }}>25 / 150 XP</span>
+        </div>
+        <div className="prog-bar mt-1">
+          <div style={{ width: "17%", height: "100%", background: "var(--neon-purple)", borderRadius: 999 }} />
+        </div>
       </div>
 
       <div className="mt-3 grid grid-cols-2 gap-2">
@@ -1038,6 +1131,74 @@ function HomeWireframe() {
       </div>
 
       <BottomNavStub active="home" />
+    </div>
+  );
+}
+
+function ProfileWireframe() {
+  const badges = [
+    "First\nWorkout", "3-Day\nStreak", "7-Day\nStreak", "Week\nComplete",
+    "10\nWorkouts", "1000\nXP", "Perfect\nWeek", "Habit\nChampion",
+  ];
+  return (
+    <div className="relative flex h-full w-full flex-col overflow-hidden" style={{ padding: "14px 12px 60px" }}>
+      <Callout n={1} x={12} y={140} />
+      <Callout n={2} x={12} y={200} />
+      <Callout n={3} x={12} y={280} />
+      <Callout n={4} x={12} y={360} />
+
+      <div className="flex items-center gap-2">
+        <div
+          className="grid place-items-center"
+          style={{ width: 34, height: 34, borderRadius: 999, background: "linear-gradient(135deg,#ff6b6b,#a76bff)", color: "#fff", fontWeight: 800, fontSize: 13 }}
+        >
+          J
+        </div>
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 800, color: "var(--text-primary)" }}>John</div>
+          <div style={{ fontSize: 9, color: "var(--text-muted)" }}>Lose Fat · Beginner</div>
+        </div>
+      </div>
+
+      <div className="mt-3 grid grid-cols-4 gap-1.5">
+        {[["1", "Started"], ["0", "Done"], ["0%", "Avg"], ["0", "Reviews"]].map(([v, l]) => (
+          <div key={l} className="glass-stat" style={{ padding: "6px 2px", textAlign: "center" }}>
+            <div style={{ fontSize: 12, fontWeight: 800, color: "var(--text-primary)" }}>{v}</div>
+            <div style={{ fontSize: 7, color: "var(--text-muted)" }}>{l}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-2" style={{ padding: 8, borderRadius: 10, background: "rgba(255,107,53,0.06)", border: "1px solid rgba(255,90,53,0.30)" }}>
+        <div style={{ fontSize: 9, color: "var(--text-secondary)" }}>Daily 5am · End-of-week 9pm · Achievements</div>
+        <div style={{ fontSize: 9, color: "#FF6B6B", fontWeight: 700, marginTop: 2 }}>Blocked in browser — re-enable there and refresh</div>
+      </div>
+
+      <div className="mt-2" style={{ padding: 8, borderRadius: 12, background: "var(--glass-2)", border: "1px solid var(--glass-border)" }}>
+        <div className="flex items-center justify-between" style={{ fontSize: 10 }}>
+          <span style={{ color: "var(--text-primary)", fontWeight: 700 }}>Rookie · 25 XP total</span>
+          <span style={{ color: "var(--neon-purple)", fontWeight: 700 }}>17%</span>
+        </div>
+        <div className="prog-bar mt-1">
+          <div style={{ width: "17%", height: "100%", background: "var(--neon-purple)", borderRadius: 999 }} />
+        </div>
+      </div>
+
+      <div className="sec-label mt-3">Achievements</div>
+      <div className="mt-1.5 grid grid-cols-4 gap-1.5">
+        {badges.map((b) => (
+          <div
+            key={b}
+            className="flex flex-col items-center justify-center text-center"
+            style={{ padding: "8px 2px", borderRadius: 10, background: "var(--glass-1)", border: "1px solid var(--glass-border)", opacity: 0.35 }}
+          >
+            <div style={{ fontSize: 14 }}>🏅</div>
+            <div style={{ fontSize: 6.5, color: "var(--text-muted)", marginTop: 2, whiteSpace: "pre-line", lineHeight: 1.2 }}>{b}</div>
+          </div>
+        ))}
+      </div>
+
+      <BottomNavStub active="profile" />
     </div>
   );
 }
@@ -1425,6 +1586,36 @@ function DecisionsTab() {
       choice: "Option B — dark glassmorphism for the current UI direction",
       rationale:
         "Gym environments have harsh overhead lighting where dark UIs reduce glare and are easier to read one-handed between sets.",
+    },
+    {
+      title: "Check-in is decoupled from full workout logging",
+      options: [
+        "Only count a gym visit once all exercises for the day are logged",
+        "Offer a separate one-tap Check-in that counts attendance independent of logging",
+      ],
+      choice: "Option B — dedicated Check-in button feeds streak + XP immediately",
+      rationale:
+        "Requiring full logging before any reward fires punishes exactly the low-motivation days the habit loop exists to rescue. A cheap, immediate action lowers the activation energy for the Trigger → Action step.",
+    },
+    {
+      title: "Locked achievements are shown greyed out, not hidden",
+      options: [
+        "Only reveal a badge once it's earned",
+        "Always render the full badge grid, with unearned badges greyed out",
+      ],
+      choice: "Option B — the full 12-badge grid is always visible",
+      rationale:
+        "An always-visible goal ladder gives users a concrete next target instead of a surprise mechanic — better suited to a beginner-heavy, restart-prone user base that needs obvious next steps.",
+    },
+    {
+      title: "Notification failures are surfaced, not swallowed",
+      options: [
+        "Silently stop sending reminders if the browser has blocked notifications",
+        "Detect the block and show an explicit, actionable warning on the profile screen",
+      ],
+      choice: 'Option B — a red "Blocked in browser" warning with re-enable instructions',
+      rationale:
+        "Push reminders are the Trigger half of the habit loop; if they silently fail, the loop stalls without the user knowing why. Surfacing the block turns a silent churn risk into a one-step fix.",
     },
   ];
 
