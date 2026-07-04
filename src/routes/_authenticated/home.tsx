@@ -442,7 +442,7 @@ function HomePage() {
             Calories
           </div>
           <div className="mt-1 text-xl font-extrabold tracking-tight text-[var(--neon-amber)]">
-            {dietStats.calories ?? "—"}
+            {dietLoading ? "…" : (dietStats.calories ?? "—")}
           </div>
         </div>
         {/* Habit Score */}
