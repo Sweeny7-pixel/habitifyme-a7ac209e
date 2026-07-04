@@ -69,7 +69,10 @@ type DietDay = {
 };
 type SevenDayDiet = { days: DietDay[] };
 
-function getTodayDietStats(dietJson: unknown): {
+function getTodayDietStats(
+  dietJson: unknown,
+  weekStartIso: string | null | undefined,
+): {
   calories: number | null;
   proteinG: number | null;
   isNewFormat: boolean;
@@ -77,8 +80,7 @@ function getTodayDietStats(dietJson: unknown): {
   if (!dietJson) return { calories: null, proteinG: null, isNewFormat: false };
   const asNew = dietJson as SevenDayDiet;
   if (Array.isArray(asNew?.days) && asNew.days.length === 7) {
-    const jsDay = new Date().getDay();
-    const idx = (jsDay + 6) % 7;
+    const idx = dietIndexForToday(weekStartIso ?? null);
     const today = asNew.days[idx];
     if (today) {
       const kcal = today.totalApproxCalories;
