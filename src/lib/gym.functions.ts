@@ -850,13 +850,22 @@ Return ONLY a JSON object (no markdown) matching:
 
 export const generateFourWeekPlan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .validator((d: unknown) =>
+    z
+      .object({ startDate: StartDateInput })
+      .optional()
+      .transform((v) => v ?? {})
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
 
     const { data: profile, error: pErr } = await supabase
       .from("profiles").select("*").eq("id", userId).maybeSingle();
     if (pErr) throw new Error(pErr.message);
     if (!profile) throw new Error("Complete onboarding first");
+
+    const firstStartIso = validateStartDate(data.startDate);
 
     // Load + locally filter catalog
     const catalog = await loadExerciseCatalog();
@@ -894,6 +903,7 @@ export const generateFourWeekPlan = createServerFn({ method: "POST" })
       equipment: profile.equipment, experience: profile.experience,
       injuries: profile.injuries ?? "",
       allergies: normalizeAllergies(profile.allergies),
+      plan_start_date: firstStartIso,
     };
 
     const plan = await callGeminiForFourWeekPlan(profileForPrompt, allowedForPrompt);
@@ -919,6 +929,7 @@ export const generateFourWeekPlan = createServerFn({ method: "POST" })
     for (let i = 0; i < plan.weeks.length; i++) {
       const w = plan.weeks[i];
       const weekNumber = startNum + i;
+      const weekStartIso = addDaysIso(firstStartIso, i * 7);
       const { data: wRow, error: wErr } = await supabase
         .from("weeks").insert({
           user_id: userId,
@@ -926,6 +937,7 @@ export const generateFourWeekPlan = createServerFn({ method: "POST" })
           plan_summary: i === 0 ? plan.plan_summary : `${plan.plan_summary} — Week ${weekNumber}: ${w.focus}`,
           diet_json: plan.diet,
           status: i === 0 ? "active" : "upcoming",
+          start_date: weekStartIso,
         }).select().single();
       if (wErr) throw new Error(wErr.message);
       if (i === 0) firstWeekId.push(wRow.id);
@@ -969,6 +981,7 @@ export const generateFourWeekPlan = createServerFn({ method: "POST" })
           title: d.title,
           focus: d.focus,
           exercises_json: hydrated,
+          workout_date: addDaysIso(weekStartIso, Math.max(0, d.day_index - 1)),
         };
       });
       const { error: dErr } = await supabase.from("workout_days").insert(daysRows);
@@ -977,6 +990,7 @@ export const generateFourWeekPlan = createServerFn({ method: "POST" })
 
     return { ok: true, weeks: plan.weeks.length, firstWeekId: firstWeekId[0] ?? null };
   });
+
 
 export const getAllPlanWeeks = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
