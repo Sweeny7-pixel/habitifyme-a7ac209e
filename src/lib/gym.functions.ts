@@ -303,10 +303,14 @@ export const generateWeekPlan = createServerFn({ method: "POST" })
       }
     }
 
-    const scheduleDates = buildDatesForWeek(startDateIso, profile.days_per_week ?? 4);
+    const workoutIndices = pickWorkoutDayIndices(startDateIso, profile.days_per_week ?? 4);
+    const scheduleDates = workoutIndices.map((idx) => {
+      const iso = addDaysIso(startDateIso, idx - 1);
+      return { day_index: idx, date_iso: iso, weekday: weekdayShort(iso) };
+    });
 
     const userPrompt = `Generate Week ${weekNumber} for this user. Day 1 starts on ${shortDateLabel(startDateIso)}.
-Use day_index (1..N) as the only day identifier. Do NOT reference weekday names in the JSON.
+Use the exact day_index values listed below (Sunday is always a rest day and is intentionally skipped). Do NOT reference weekday names in the JSON.
 Schedule (day_index → date): ${scheduleDates.map((d) => `${d.day_index}=${d.date_iso} (${d.weekday})`).join(", ")}
 
 - Name: ${profile.name}
