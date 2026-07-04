@@ -99,38 +99,32 @@ function CalendarPage() {
     return map;
   }, [weeks, today]);
 
+  // BUG-102: build dateToDay from the currently-viewed week only. When two
+  // weeks accidentally share a date (legacy data), the shared map would
+  // silently overwrite completed workouts and drive WEEKLY PROGRESS to 0/N.
   const dateToDay = useMemo(() => {
     const map = new Map<string, (typeof days)[number]>();
-    weeks.forEach((w) => {
-      const weekStart = w.start_date ? parseDbDate(w.start_date) : null;
-      const wDays = days.filter((d) => d.week_id === w.id).sort((a, b) => a.day_index - b.day_index);
-      wDays.forEach((d) => {
-        // Prefer the explicit workout_date (rolling-week rows); fall back to
-        // start_date + (day_index - 1) for legacy rows without workout_date.
-        const dt = d.workout_date
-          ? parseDbDate(d.workout_date)
-          : weekStart
-            ? addDays(weekStart, Math.max(0, d.day_index - 1))
-            : null;
-        if (!dt) return;
-        map.set(dt.toDateString(), d);
-      });
+    if (!currentViewWeek) return map;
+    const weekStart = currentViewWeek.start_date ? parseDbDate(currentViewWeek.start_date) : null;
+    const wDays = days
+      .filter((d) => d.week_id === currentViewWeek.id)
+      .sort((a, b) => a.day_index - b.day_index);
+    wDays.forEach((d) => {
+      const dt = d.workout_date
+        ? parseDbDate(d.workout_date)
+        : weekStart
+          ? addDays(weekStart, Math.max(0, d.day_index - 1))
+          : null;
+      if (!dt) return;
+      map.set(dt.toDateString(), d);
     });
     return map;
-  }, [weeks, days]);
+  }, [currentViewWeek, days]);
 
-  // Diet preview comes from the week the selected date belongs to. We compare
-  // against the actual 7-day window starting at `start_date` rather than the
-  // Monday-anchored strip window.
-  const selectedWeek = useMemo(() => {
-    for (const w of weeks) {
-      if (!w.start_date) continue;
-      const start = parseDbDate(w.start_date);
-      const end = addDays(start, 7);
-      if (selected >= start && selected < end) return w;
-    }
-    return weeks.find((w) => w.status === "active") ?? weeks[0] ?? null;
-  }, [weeks, selected]);
+  // The selected date's diet should always come from the week the user is
+  // currently viewing (not a different week that happens to overlap the
+  // date). This keeps Home / Calendar / Diet aligned.
+  const selectedWeek = currentViewWeek;
 
   const selectedDay = dateToDay.get(selected.toDateString()) ?? null;
 

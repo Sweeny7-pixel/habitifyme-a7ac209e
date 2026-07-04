@@ -40,6 +40,15 @@ function DietPage() {
 
   const weeks = useMemo(() => (allQ.data?.weeks ?? []).slice().sort((a, b) => a.week_number - b.week_number), [allQ.data]);
   const defaultWeekId = useMemo(() => {
+    // BUG-101: pick the week whose 7-day window contains today so Diet opens
+    // on the same week Home & Calendar are showing.
+    const today = todayIstIso();
+    const containsToday = weeks.find((w) => {
+      if (!w.start_date) return false;
+      const end = addDaysIso(w.start_date, 7);
+      return w.start_date <= today && today < end;
+    });
+    if (containsToday) return containsToday.id;
     const active = weeks.find((w) => w.status === "active");
     return active?.id ?? weeks[weeks.length - 1]?.id ?? null;
   }, [weeks]);

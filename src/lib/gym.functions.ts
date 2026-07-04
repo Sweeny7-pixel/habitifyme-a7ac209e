@@ -28,6 +28,33 @@ function buildDatesForWeek(startDateIso: string, dayCount: number): {
   });
 }
 
+/** Return the first `count` day_indices in 1..7 whose weekday (relative to
+ * `startDateIso`) is not Sunday. Sunday is always a rest day, so training
+ * days skip it. `count` is clamped to 6. */
+function pickWorkoutDayIndices(startDateIso: string, count: number): number[] {
+  const capped = Math.max(1, Math.min(6, count));
+  const start = new Date(startDateIso + "T00:00:00");
+  const out: number[] = [];
+  for (let i = 0; i < 7 && out.length < capped; i++) {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    if (d.getDay() !== 0 /* Sunday */) out.push(i + 1);
+  }
+  return out;
+}
+
+/** Rewrite AI-returned days so their `day_index` values match the
+ * Sunday-skipping schedule for a week starting on `startDateIso`. Days beyond
+ * the allowed count are dropped, preserving the AI's ordering. */
+function reindexDaysSkipSunday<T extends { day_index: number }>(
+  days: T[],
+  startDateIso: string,
+): T[] {
+  const sorted = [...days].sort((a, b) => a.day_index - b.day_index);
+  const allowed = pickWorkoutDayIndices(startDateIso, sorted.length);
+  return sorted.slice(0, allowed.length).map((d, i) => ({ ...d, day_index: allowed[i] }));
+}
+
 // ============ Schemas ============
 
 // Normalises the free-text allergies field. Treats sentinel words like
@@ -276,10 +303,14 @@ export const generateWeekPlan = createServerFn({ method: "POST" })
       }
     }
 
-    const scheduleDates = buildDatesForWeek(startDateIso, profile.days_per_week ?? 4);
+    const workoutIndices = pickWorkoutDayIndices(startDateIso, profile.days_per_week ?? 4);
+    const scheduleDates = workoutIndices.map((idx) => {
+      const iso = addDaysIso(startDateIso, idx - 1);
+      return { day_index: idx, date_iso: iso, weekday: weekdayShort(iso) };
+    });
 
     const userPrompt = `Generate Week ${weekNumber} for this user. Day 1 starts on ${shortDateLabel(startDateIso)}.
-Use day_index (1..N) as the only day identifier. Do NOT reference weekday names in the JSON.
+Use the exact day_index values listed below (Sunday is always a rest day and is intentionally skipped). Do NOT reference weekday names in the JSON.
 Schedule (day_index → date): ${scheduleDates.map((d) => `${d.day_index}=${d.date_iso} (${d.weekday})`).join(", ")}
 
 - Name: ${profile.name}
@@ -357,7 +388,10 @@ Schedule (day_index → date): ${scheduleDates.map((d) => `${d.day_index}=${d.da
     if (wErr) throw new Error(wErr.message);
 
     // Insert days
-    const daysToInsert = hydratedDays.map(d => ({
+    // Enforce Sunday-as-rest by re-mapping day_index to the allowed schedule.
+    const reindexedDays = reindexDaysSkipSunday(hydratedDays, startDateIso);
+
+    const daysToInsert = reindexedDays.map(d => ({
       week_id: week.id,
       user_id: userId,
       day_index: d.day_index,
@@ -803,7 +837,7 @@ async function callGeminiForFourWeekPlan(
   const system = `You are HabitifyMe, a careful coach for budget-gym beginners in India. You will design a 4-week training block.
 RULES:
 - You MUST ONLY pick exercises from the provided allowed_exercises list, using their exact "id".
-- Use exactly profile.days_per_week training days per week (no rest days listed).
+- Use exactly profile.days_per_week training days per week (no rest days listed). Sunday is always a rest day — never schedule a workout on Sunday.
 - Apply gentle progressive overload week-over-week (more sets, harder reps, or shorter rest).
 - Reps as a string like "8-12" or "AMRAP". Rest in seconds.
 - Diet must be India-friendly (dal, roti, paneer, eggs, rice, chicken, curd). Provide 3 sample meals. Protein 1.4-2.0 g/kg.
@@ -942,7 +976,8 @@ export const generateFourWeekPlan = createServerFn({ method: "POST" })
       if (wErr) throw new Error(wErr.message);
       if (i === 0) firstWeekId.push(wRow.id);
 
-      const daysRows = w.days.map((d) => {
+      const reindexedWDays = reindexDaysSkipSunday(w.days, weekStartIso);
+      const daysRows = reindexedWDays.map((d) => {
         const hydrated = d.exercises.map((p) => {
           const cat = byId.get(p.exerciseId);
           const name = cat?.name ?? p.exerciseId;
@@ -1051,7 +1086,7 @@ async function callGeminiForPromptPlan(
 RULES:
 - Use canonical exercise names from the yuhonas/free-exercise-db catalog (e.g. "Barbell Curl", "Dumbbell Bench Press", "Wide-Grip Lat Pulldown"). No slang, no abbreviations.
 - For each exercise, also provide the primary muscle ("chest", "biceps", "quadriceps", ...) and equipment ("barbell", "dumbbell", "cable", "machine", "body only", ...). These hints help match real exercises.
-- Number of days MUST equal days_per_week. List only training days (no rest days).
+- Number of days MUST equal days_per_week. List only training days (no rest days). Sunday is always a rest day — never schedule a workout on Sunday.
 - 4-7 exercises per day. Reps as a string like "8-12" or "AMRAP". Rest in seconds (60, 90, 120).
 - Diet must be India-friendly (dal, roti, paneer, eggs, rice, chicken, curd). 3 sample meals. Protein 1.4-2.0 g/kg bodyweight.
 - If allergies are listed, NEVER include them in any meal; substitute safely and mention substitution in diet.notes.
@@ -1222,7 +1257,8 @@ export const generatePlanFromPrompt = createServerFn({ method: "POST" })
       .single();
     if (wErr) throw new Error(wErr.message);
 
-    const daysRows = validDays.map((d) => ({
+    const reindexedValidDays = reindexDaysSkipSunday(validDays, weekStartIso);
+    const daysRows = reindexedValidDays.map((d) => ({
       week_id: wRow.id,
       user_id: userId,
       day_index: d.day_index,
@@ -1234,7 +1270,7 @@ export const generatePlanFromPrompt = createServerFn({ method: "POST" })
     const { error: dErr } = await supabase.from("workout_days").insert(daysRows);
     if (dErr) throw new Error(dErr.message);
 
-    return { ok: true, weekId: wRow.id, days: validDays.length };
+    return { ok: true, weekId: wRow.id, days: reindexedValidDays.length };
   });
 
 // ============ 7-day Indian diet plan ============

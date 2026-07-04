@@ -49,13 +49,6 @@ export const Route = createFileRoute("/_authenticated/home")({
   component: HomePage,
 });
 
-type DietJson = {
-  daily_calories: number;
-  daily_protein_g: number;
-  notes: string;
-  meals: { name: string; items: string }[];
-};
-
 type Meal = { items: string[]; approxCalories: number };
 type DietDay = {
   day: string;
@@ -77,28 +70,18 @@ function getTodayDietStats(
 ): {
   calories: number | null;
   proteinG: number | null;
-  isNewFormat: boolean;
 } {
-  if (!dietJson) return { calories: null, proteinG: null, isNewFormat: false };
-  const asNew = dietJson as SevenDayDiet;
-  if (Array.isArray(asNew?.days) && asNew.days.length === 7) {
+  const asNew = dietJson as SevenDayDiet | null;
+  if (asNew && Array.isArray(asNew.days) && asNew.days.length === 7) {
     const idx = dietIndexForToday(weekStartIso ?? null);
     const today = asNew.days[idx];
     if (today) {
       const kcal = today.totalApproxCalories;
       const proteinG = Math.round((kcal * 0.3) / 4);
-      return { calories: kcal, proteinG, isNewFormat: true };
+      return { calories: kcal, proteinG };
     }
   }
-  const asOld = dietJson as { daily_calories?: number; daily_protein_g?: number };
-  if (asOld?.daily_calories) {
-    return {
-      calories: asOld.daily_calories,
-      proteinG: asOld.daily_protein_g ?? null,
-      isNewFormat: false,
-    };
-  }
-  return { calories: null, proteinG: null, isNewFormat: false };
+  return { calories: null, proteinG: null };
 }
 
 function HomePage() {
@@ -291,8 +274,10 @@ function HomePage() {
   }
 
   if (!activeWeek) return null;
-  const diet = activeWeek.diet_json as DietJson | null;
-  const dietSource = weekDietQ.data?.diet ?? activeWeek.diet_json;
+  // BUG-101: only use the canonical 7-day diet from getWeekDiet, never the
+  // legacy `weeks.diet_json` snapshot, so Home / Calendar / Diet always agree.
+  const dietSource = weekDietQ.data?.diet ?? null;
+  const dietLoading = weekDietQ.isLoading;
   const dietStats = getTodayDietStats(dietSource, activeWeek.start_date);
   const totalDays = activeDays.length;
   const doneDays = activeDays.filter((d) => d.completed_at).length;
@@ -457,7 +442,7 @@ function HomePage() {
             Calories
           </div>
           <div className="mt-1 text-xl font-extrabold tracking-tight text-[var(--neon-amber)]">
-            {dietStats.calories ?? "—"}
+            {dietLoading ? "…" : (dietStats.calories ?? "—")}
           </div>
         </div>
         {/* Habit Score */}
@@ -617,7 +602,7 @@ function HomePage() {
       )}
 
       {/* Diet preview */}
-      {(dietStats.calories || diet) && (
+      {(dietLoading || dietStats.calories) && (
         <section>
           <div className="sec-label mb-2 flex items-center gap-1.5">
             <Utensils className="h-3.5 w-3.5" /> Today's diet target
@@ -626,26 +611,17 @@ function HomePage() {
             <div className="grid grid-cols-2 gap-3">
               <div className="glass-stat">
                 <div className="text-[22px] font-extrabold text-[var(--text-primary)]">
-                  {dietStats.calories ?? diet?.daily_calories ?? "—"}
+                  {dietLoading ? "…" : (dietStats.calories ?? "—")}
                 </div>
                 <div className="sec-label mt-1">Kcal</div>
               </div>
               <div className="glass-stat">
                 <div className="text-[22px] font-extrabold text-[var(--text-primary)]">
-                  {dietStats.proteinG
-                    ? `${dietStats.proteinG}g`
-                    : diet?.daily_protein_g
-                      ? `${diet.daily_protein_g}g`
-                      : "—"}
+                  {dietLoading ? "…" : dietStats.proteinG ? `${dietStats.proteinG}g` : "—"}
                 </div>
                 <div className="sec-label mt-1">Protein</div>
               </div>
             </div>
-            {diet?.notes && (
-              <p className="mt-3 text-xs text-[var(--text-secondary)] leading-relaxed">
-                {diet.notes}
-              </p>
-            )}
             <Link to="/diet" className="glass-btn glass-btn-ghost glass-btn-sm mt-3 w-full">
               View 7-day diet plan
             </Link>

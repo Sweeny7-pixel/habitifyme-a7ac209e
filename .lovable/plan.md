@@ -1,41 +1,48 @@
-## QA Test Pass — HabitifyMe
+## Fix BUG-101, BUG-102, and default Sunday to rest
 
-Act as Senior QA. No code fixes. Deliverable = one Bug Log ordered by severity + a Pass/Fail/N/A row for every checklist item.
+### Root cause (verified against DB)
 
-Requires build mode: the run itself needs `code--exec` to drive Playwright. Approving this plan is the only way to actually execute it.
+Every week of every plan is being inserted with the **same** `start_date` (`ow3` W1–W4 all read `2026-07-04`; `ow2` W1–W2 both read `2026-07-01`). Three consequences:
 
-### Approach
+1. `dateToDay` in Calendar keys by `date.toDateString()` and overwrites, so W1's completed days get replaced by W4's empty days → **BUG-102** (Cal 0/5 vs Home 5/5).
+2. `Diet` page's `defaultWeekId` picks "latest" (W4), while `Calendar`'s `selectedWeek` picks the first window that contains the date (W1), while `Home` uses `activeWeek` — three surfaces query **three different weeks** for "today" → **BUG-101**.
+3. Home also has a `?? activeWeek.diet_json` fallback to the legacy `{daily_calories,…}` shape, which diverges from the 7-day format returned by `getWeekDiet`.
 
-1. **Read the checklist** — 174 lines, ~89 numbered rows across sections 1–10, already loaded.
-2. **Drive the app via Playwright** (headless Chromium, 390×844 mobile viewport primary, one 1280×1800 desktop pass for responsive checks) against `http://localhost:8080`. The six accounts are managed Supabase logins; sign in via `/auth` UI per account (new browser context each), reuse `storage_state` for the account.
-3. **Per account walk**: Home → Training list → Workout Detail (open ≥1 day) → Diet → Calendar (Week + Month) → Profile → Notifications. Screenshot each screen + evidence into `/tmp/browser/qa/<account>/`.
-4. **Exploratory (1–2 accounts)**: browser back/forward, viewport resize, empty/boundary states (new week, streak 0/1/2+). Rapid double-tap of Check-in / Mark diet / Finish workout — described in report but **only observed, not executed**, so the run doesn't corrupt state.
-5. **Cross-screen consistency** per account: dates, week #, workout names, exercise counts, calorie totals, progress % must agree across Home / Training / Workout / Diet / Calendar / Profile. Diff table per account.
-6. **Priority order** — ⚠️ rows first (1.4, 1.5, 3.2, 6.8, 7.1, 7.2, 7.3, 9.1, 9.2), then ❓ (6.4, 6.7, 6.9, 6.10, 7.6, 8.1, 8.4, 9.3, 9.8), then the rest. Re-verify previously-shipped fixes (auth mode, rolling-week calendar, calorie parity, focus truncation, streak/PB/label polish).
-7. **Log every issue** in the user's exact template (BUG-ID, Severity, Screen, Account, Steps, Expected, Actual, Evidence path, Related checklist item). Order Critical → Cosmetic.
-8. **Summary header** — total cases run, pass/fail/N/A, counts by severity.
+### Fix plan
 
-### Deliverable shape
+**1. Migration — repair existing plans (`supabase/migrations/…_fix_week_dates.sql`)**
+   - For every user, order their non-completed weeks by `week_number`, keep the earliest `start_date` as the anchor, and set each subsequent week's `start_date = anchor + (week_number − min_week_number) · 7`.
+   - Do **not** touch weeks with `status = 'completed'` (they were the reference calendar week).
+   - Recompute `workout_days.workout_date = weeks.start_date + (day_index − 1)` for the affected weeks.
 
-```
-# HabitifyMe QA Report — <date>
+**2. Plan generation — never emit workouts on Sunday**
+   - Add a shared helper `pickWorkoutDayIndices(weekStartIso, daysPerWeek)` in `src/lib/gym.functions.ts` that returns the first `daysPerWeek` values from `[1..7]` whose computed weekday is not Sunday.
+   - In `generateFourWeekPlan`, `generatePlanFromPrompt`, and `generateSingleWeek`: after the AI returns `plan.weeks[i].days`, re-map each returned day's `day_index` in order to those allowed indices before insertion. Discard extras. This preserves the AI's ordering and titles.
+   - Append a hard rule to the AI prompts ("Sunday is always a rest day. Never schedule workouts on Sunday.") so the model matches the enforced constraint.
 
-## Summary
-- Cases run: X / ~89
-- Pass: X   Fail: X   N/A: X
-- Severity: Critical X · High X · Medium X · Low X · Cosmetic X
+**3. Diet generation — Sunday is a rest day**
+   - `callGeminiForSevenDayDiet` already takes `workoutDayIndices`. Compute those from the (Sunday-free) workout_days rather than from raw `day_index`, and pass `restDayIndices` explicitly with a note in the prompt that any index landing on Sunday must be a rest day with lighter carbs.
+   - When today is Sunday, Home / Diet / Calendar should render the diet as a rest day automatically (falls out of the `isWorkoutDay: false` flag returned).
 
-## Checklist outcomes
-| # | Title | Result | Note / Bug-ID |
+**4. Home (`src/routes/_authenticated/home.tsx`)**
+   - Remove the `?? activeWeek.diet_json` legacy fallback in `dietSource`. Show a lightweight skeleton on the CALORIES card and TODAY'S DIET TARGET card while `weekDietQ.isLoading`. Hide those cards entirely if `weekDietQ.data?.diet` is null.
+   - Delete the legacy `DietJson` branch in `getTodayDietStats`; the function now returns only the 7-day-indexed value.
 
-## Bug Log (Critical → Cosmetic)
-### [BUG-001] ...
-```
+**5. Calendar (`src/routes/_authenticated/calendar.tsx`)**
+   - Build `dateToDay` using the **currently-viewed** week only (i.e. filter `days` by `week_id === currentViewWeek.id`) so it can no longer be polluted by adjacent weeks that happen to share a date.
+   - `WeeklyProgressCard` counts `days.filter(d => d.week_id === currentViewWeek.id)` directly instead of iterating the shared map. This lines up with Home's `activeDays` math and closes BUG-102 even for legacy accounts that skip the migration.
+   - `SelectedDayPanel` receives `weekId = currentViewWeek.id`; it must not be re-derived from `selected`, so the diet query keys on the same week Home uses.
 
-### Constraints
+**6. Diet (`src/routes/_authenticated/diet.tsx`)**
+   - `defaultWeekId`: pick the week whose `[start_date, start_date + 7)` contains today; if none, fall back to `active`, then to the last week. This aligns "which week the Diet page opens on" with Calendar's `selectedWeek`.
 
-- **Read-only run** — no check-in taps, no "Mark diet followed", no Finish workout, no Regenerate. Tests requiring a mutation are marked N/A with a note.
-- Account passwords used only for Playwright sign-in; never echoed in reports or screenshots.
-- If an account fails to sign in, log it as its own bug and continue with the rest.
-- No code changes, no migrations, no fixes.
-- Report saved to `/mnt/documents/habitifyme-qa-report-<date>.md` and inline in chat.
+### Out of scope (deferred)
+- BUG-103 (future-start "Today" labelling), BUG-104 (diet marking a workout day as rest — should be automatically fixed by the Sunday-index alignment for the ow1 case, otherwise re-open), BUG-105 through BUG-124.
+
+### Verification (Playwright, read-only)
+
+After the changes:
+- ow3: Home / Calendar / Diet all show identical kcal + meal items for Sat Jul 4; Cal `WEEKLY PROGRESS` reads `5/5` for W1; Cal week nav Prev/Next advances to real Jul 11 / Jul 18 / Jul 25.
+- ow2: Diet & Cal show identical meals for Sat Jul 4; Cal W2 reads `1/5`.
+- ow4/5/6 (single-week plans): unchanged counts, but any workout that landed on Sun is now shifted; new plan generation for a hypothetical Sun-start plan skips Sunday.
+- Regression sweep: no build error, no hydration warnings, no `useEffect+fetch`, no hook-order changes.
